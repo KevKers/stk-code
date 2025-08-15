@@ -274,6 +274,9 @@ void ServerLobbyCommands::registerCommands()
     m_executor.add_alias("begin", "start");
     m_executor.add_alias("play", "start");
     m_executor.register_command(std::make_shared<EndGameCommand>());
+    // Hide & Seek
+    m_executor.register_command(std::make_shared<RandomTeamsHSCommand>());
+    m_executor.add_alias("rt", "randomteams");
     m_executor.add_alias("end", "endgame");
     m_executor.add_alias("lobby", "endgame");
     m_executor.register_command(std::make_shared<BanCommand>());

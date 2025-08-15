@@ -30,7 +30,7 @@ public:
     SetTeamCommand() : STKCommand(false)
     {
         m_name = "setteam";
-        m_args = {{nnwcli::CT_STRING, "team", "team name: red/blue/none"},
+        m_args = {{nnwcli::CT_STRING, "team", "team name: red/blue/none OR hider/h/seek/seeker/s/spectator"},
                   {nnwcli::CT_DOUBLE, "player", "Name of player"}};
         m_description = "Assigns a team to a player.";
     }

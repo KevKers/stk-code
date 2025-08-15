@@ -91,6 +91,7 @@
 #include "lobby/commands/jumbleword.hpp"
 #include "lobby/commands/randomkarts.hpp"
 #include "lobby/commands/endgame.hpp"
+#include "lobby/commands/randomteams_hs.hpp"
 #include "lobby/commands/goalhistory.hpp"
 // special features
 #include "lobby/commands/pole.hpp"

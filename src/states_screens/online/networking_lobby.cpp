@@ -988,6 +988,22 @@ void NetworkingLobby::updatePlayers()
             player_name += L" ";
             player_name += flag;
         }
+        // For Hide & Seek mode, show [HIDING]/[SEEKING] label in plain text
+        if (RaceManager::get()->getMinorMode() == RaceManager::MINOR_MODE_HIDE_SEEK)
+        {
+            if (player.isSpectator())
+            {
+                // no label
+            }
+            else if (cur_team == KART_TEAM_RED)
+            {
+                player_name = core::stringw(L"[HIDING] ") + player_name;
+            }
+            else if (cur_team == KART_TEAM_BLUE)
+            {
+                player_name = core::stringw(L"[SEEKING] ") + player_name;
+            }
+        }
         m_player_list->addItem(internal_name, player_name,
             player.m_icon_id);
         // Don't show chosen team color for spectator

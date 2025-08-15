@@ -306,6 +306,9 @@ void ServerLobbyCommands::registerCommands()
     m_executor.register_command(std::make_shared<SetHandicapCommand>());
     m_executor.add_alias("sethc", "sethandicap");
     m_executor.register_command(std::make_shared<SetOwnerCommand>());
+    // Hide & Seek timing admin commands
+    m_executor.register_command(std::make_shared<SetHideTimeCommand>());
+    m_executor.register_command(std::make_shared<SetTotalTimeCapCommand>());
     m_executor.add_alias("sethost", "setowner");
     m_executor.register_command(std::make_shared<SetModeCommand>());
     m_executor.register_command(std::make_shared<SetDifficultyCommand>());

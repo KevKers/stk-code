@@ -37,6 +37,12 @@ class XMLNode;
 
 namespace ServerConfig
 {
+    // Hide & Seek server parameters
+    SERVER_CFG_PREFIX IntServerConfigParam m_hs_hide_time
+        SERVER_CFG_DEFAULT(IntServerConfigParam(180, "hs-hide-time", "Hide & Seek: hide phase time in seconds."));
+    SERVER_CFG_PREFIX IntServerConfigParam m_hs_total_time_cap
+        SERVER_CFG_DEFAULT(IntServerConfigParam(900, "hs-total-time-cap", "Hide & Seek: total time cap in seconds."));
+
     // ========================================================================
     class FloatServerConfigParam : public FloatUserConfigParam
     {

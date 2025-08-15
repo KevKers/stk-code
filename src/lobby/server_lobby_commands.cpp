@@ -100,6 +100,8 @@
 #include "lobby/commands/veto.hpp"
 #include "lobby/commands/customtext_reload.hpp"
 #include "lobby/commands/setowner.hpp"
+#include "lobby/commands/sethidetime.hpp"
+#include "lobby/commands/settotaltimecap.hpp"
 #include "lobby/commands/setteam.hpp"
 #include "lobby/commands/settrack.hpp"
 #include "lobby/commands/start.hpp"

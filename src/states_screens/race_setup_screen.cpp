@@ -43,6 +43,7 @@ const int CONFIG_CODE_EASTER    = 4;
 const int CONFIG_CODE_SOCCER    = 5;
 const int CONFIG_CODE_GHOST     = 6;
 const int CONFIG_CODE_LAP_TRIAL = 7;
+const int CONFIG_CODE_HIDE_SEEK = 8;
 
 using namespace GUIEngine;
 
@@ -143,6 +144,12 @@ void RaceSetupScreen::init()
     name7 += _("Complete as many laps as possible in a given amount of time.");
     w2->addItem(name7, IDENT_LAP_TRIAL, RaceManager::getIconOf(RaceManager::MINOR_MODE_LAP_TRIAL));
 
+    // Hide and Seek mode (uses normal tracks)
+    irr::core::stringw name8 = irr::core::stringw(
+        RaceManager::getNameOf(RaceManager::MINOR_MODE_HIDE_SEEK)) + L"\n";
+    name8 += _("Find or hide on normal tracks in a team-based match.");
+    w2->addItem(name8, IDENT_HIDE_SEEK, RaceManager::getIconOf(RaceManager::MINOR_MODE_HIDE_SEEK));
+
     w2->updateItemDisplay();
 
     // restore saved game mode
@@ -172,9 +179,12 @@ void RaceSetupScreen::init()
     case CONFIG_CODE_LAP_TRIAL:
         w2->setSelection(IDENT_LAP_TRIAL, PLAYER_ID_GAME_MASTER, true);
         break;
+    case CONFIG_CODE_HIDE_SEEK:
+        w2->setSelection(IDENT_HIDE_SEEK, PLAYER_ID_GAME_MASTER, true);
+        break;
     }
 
-    w2->setItemCountHint(8);
+    w2->setItemCountHint(9);
 
     {
         RibbonWidget* w = getWidget<RibbonWidget>("difficulty");
@@ -194,9 +204,7 @@ void RaceSetupScreen::init()
             hardestWidget->setActive(true);
         }
     }
-}   // init
-
-// -----------------------------------------------------------------------------
+}
 void RaceSetupScreen::eventCallback(Widget* widget, const std::string& name,
                                     const int playerID)
 {
@@ -264,6 +272,13 @@ void RaceSetupScreen::eventCallback(Widget* widget, const std::string& name,
             UserConfigParams::m_game_mode = CONFIG_CODE_LAP_TRIAL;
             TracksAndGPScreen::getInstance()->push();
         }
+        else if (selectedMode == IDENT_HIDE_SEEK)
+        {
+            // New Hide & Seek uses normal race tracks selection UI
+            RaceManager::get()->setMinorMode(RaceManager::MINOR_MODE_HIDE_SEEK);
+            UserConfigParams::m_game_mode = CONFIG_CODE_HIDE_SEEK;
+            TracksAndGPScreen::getInstance()->push();
+        }
         else if (selectedMode == "locked")
         {
             unlock_manager->playLockSound();
@@ -290,6 +305,4 @@ void RaceSetupScreen::assignDifficulty()
     RaceManager::Difficulty diff = RaceManager::convertDifficulty(difficulty);
     UserConfigParams::m_difficulty = diff;
     RaceManager::get()->setDifficulty(diff);
-}   // assignDifficulty
-
-// -----------------------------------------------------------------------------
+}

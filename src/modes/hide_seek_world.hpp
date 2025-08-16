@@ -81,6 +81,10 @@ private:
     bool allHidersConfirmed() const;
     bool allHidersEliminated() const;
     void broadcastAll(const std::string& msg);
+
+    // Per-seeker hint usage/cooldown
+    std::unordered_map<int,int> m_hint_uses_left;
+    std::unordered_map<int,int> m_hint_next_tick;
 };
 
 #endif // HIDE_SEEK_WORLD_HPP

@@ -42,7 +42,7 @@ void HideAndSeekWorld::init()
     m_use_highscores = false;   // no highscores in this mode
 
     // Snapshot server config values for this round
-    m_saved_prev_hide_time = (int)ServerConfig::m_hs_hide_time.getDefaultValue();
+    m_saved_prev_hide_time = (int)ServerConfig::m_hs_hide_time;
     // Use current configured time for this round
     m_hide_phase_seconds_current = (int)ServerConfig::m_hs_hide_time;
     m_total_cap_seconds          = (int)ServerConfig::m_hs_total_time_cap;

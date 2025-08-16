@@ -50,6 +50,10 @@ public:
                            const std::string& target_name_utf8,
                            float max_distance_m);
 
+    // Hint handling for /hint
+    bool handleHintFor(const std::string& seeker_name_utf8,
+                       std::string& out_message);
+
 private:
     // Phase/time
     PhaseHS m_phase;

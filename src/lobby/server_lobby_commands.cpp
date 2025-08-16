@@ -315,6 +315,7 @@ void ServerLobbyCommands::registerCommands()
     m_executor.register_command(std::make_shared<SetOwnerCommand>());
     // Hide & Seek timing admin commands
     m_executor.register_command(std::make_shared<SetHideTimeCommand>());
+    m_executor.add_alias("sethidephase", "sethidetime");
     m_executor.register_command(std::make_shared<SetTotalTimeCapCommand>());
     m_executor.add_alias("sethost", "setowner");
     m_executor.register_command(std::make_shared<SetModeCommand>());

@@ -43,6 +43,18 @@ namespace ServerConfig
     SERVER_CFG_PREFIX IntServerConfigParam m_hs_total_time_cap
         SERVER_CFG_DEFAULT(IntServerConfigParam(900, "hs-total-time-cap", "Hide & Seek: total time cap in seconds."));
 
+    // Hint and smart cake thresholds
+    SERVER_CFG_PREFIX FloatServerConfigParam m_hs_fire_distance_threshold
+        SERVER_CFG_DEFAULT(FloatServerConfigParam(30.0f, "hs-fire-distance-threshold", "HS: firing allowed only within this distance (meters)."));
+    SERVER_CFG_PREFIX FloatServerConfigParam m_hs_hot_threshold
+        SERVER_CFG_DEFAULT(FloatServerConfigParam(20.0f, "hs-hot-threshold", "HS: Hot if distance < this (meters)."));
+    SERVER_CFG_PREFIX FloatServerConfigParam m_hs_warm_min
+        SERVER_CFG_DEFAULT(FloatServerConfigParam(25.0f, "hs-warm-min", "HS: Warm if distance in [warm-min, warm-max]."));
+    SERVER_CFG_PREFIX FloatServerConfigParam m_hs_warm_max
+        SERVER_CFG_DEFAULT(FloatServerConfigParam(50.0f, "hs-warm-max", "HS: Warm if distance in [warm-min, warm-max]."));
+    SERVER_CFG_PREFIX IntServerConfigParam m_hs_hint_default_uses
+        SERVER_CFG_DEFAULT(IntServerConfigParam(5, "hs-hint-default-uses", "HS: default per-seeker /hint uses per round."));
+
     // ========================================================================
     class FloatServerConfigParam : public FloatUserConfigParam
     {

@@ -121,6 +121,21 @@ void HideAndSeekWorld::update(int ticks)
             if (now >= kv.second)
             {
                 eliminateKart(kv.first, false /*silent*/);
+                // Move peer to lobby if networked
+                if (auto sl = LobbyProtocol::get<ServerLobby>())
+                {
+                    auto name = getKart(kv.first)->getController()->getName();
+                    auto peer = STKHost::get()->findPeerByName(name);
+                    if (peer)
+                    {
+                        NetworkString* back_lobby = sl->getNetworkString(2);
+                        back_lobby->setSynchronous(true);
+                        back_lobby->addUInt8(LobbyProtocol::LE_BACK_LOBBY)
+                                  .addUInt8(LobbyProtocol::BLR_SPECTATING_NEXT_GAME);
+                        peer->sendPacket(back_lobby, /*reliable*/true);
+                        delete back_lobby;
+                    }
+                }
                 to_remove.push_back(kv.first);
             }
         }

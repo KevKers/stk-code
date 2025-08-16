@@ -198,6 +198,8 @@ void ServerLobbyCommands::registerCommands()
     m_executor.add_alias("queue", "slots");
     m_executor.register_command(std::make_shared<TeamChatCommand>());
     m_executor.register_command(std::make_shared<PublicCommand>());
+    m_executor.add_alias("public", "public");
+    m_executor.register_command(std::make_shared<PublicCommand>());
     m_executor.register_command(std::make_shared<PrivateMessageCommand>());
     m_executor.add_alias("to", "msg");
     m_executor.add_alias("pm", "msg");

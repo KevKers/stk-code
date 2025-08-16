@@ -30,7 +30,7 @@ HideAndSeekWorld::HideAndSeekWorld() : WorldWithRank()
 
 HideAndSeekWorld::~HideAndSeekWorld()
 {
-    // Restore hide time back to value before this round (one-shot admin change)
+    // Restore hide time back to server_config.xml current value kept at init
     if (m_saved_prev_hide_time >= 0)
         ServerConfig::m_hs_hide_time = m_saved_prev_hide_time;
 }

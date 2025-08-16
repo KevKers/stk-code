@@ -53,6 +53,7 @@
 #include "lobby/commands/slots.hpp"
 #include "lobby/commands/teamchat.hpp"
 #include "lobby/commands/public.hpp"
+#include "lobby/commands/public.hpp"
 #include "lobby/commands/private_message.hpp"
 #include "lobby/commands/listserveraddon.hpp"
 #include "lobby/commands/playeraddonscore.hpp"

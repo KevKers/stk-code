@@ -581,6 +581,22 @@ void RaceGUI::drawGlobalMiniMap()
     if ( (track->isArena() || track->isSoccer()) && !(track->hasNavMesh()) )
         return;
 
+    // Hide & Seek: hide minimap for seekers
+    if (RaceManager::get()->getMinorMode() == RaceManager::MINOR_MODE_HIDE_SEEK)
+    {
+        World* w = World::getWorld();
+        if (w)
+        {
+            const AbstractKart* k = kart;
+            if (k)
+            {
+                KartTeam team = w->getKartTeam(k->getWorldKartId());
+                if (team == KART_TEAM_BLUE)
+                    return;
+            }
+        }
+    }
+
     int upper_y = irr_driver->getActualScreenSize().Height - m_map_bottom - m_map_height;
     int lower_y = irr_driver->getActualScreenSize().Height - m_map_bottom;
 

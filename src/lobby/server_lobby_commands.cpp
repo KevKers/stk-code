@@ -281,6 +281,8 @@ void ServerLobbyCommands::registerCommands()
     m_executor.register_command(std::make_shared<EndGameCommand>());
     // Hide & Seek
     m_executor.register_command(std::make_shared<RandomTeamsHSCommand>());
+    m_executor.register_command(std::make_shared<ConfirmCommand>());
+    m_executor.register_command(std::make_shared<FoundCommand>());
     m_executor.add_alias("rt", "randomteams");
     m_executor.add_alias("end", "endgame");
     m_executor.add_alias("lobby", "endgame");

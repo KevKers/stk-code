@@ -21,6 +21,9 @@ HideAndSeekWorld::HideAndSeekWorld() : WorldWithRank()
     m_phase_start_ticks = 0;
     m_game_start_ticks = 0;
     m_hide_phase_seconds_current = 180;
+#include "network/protocols/server_lobby.hpp"
+#include "network/stk_host.hpp"
+
     m_total_cap_seconds = 900;
     m_saved_prev_hide_time = -1;
 }

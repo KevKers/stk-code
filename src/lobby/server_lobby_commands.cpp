@@ -93,6 +93,8 @@
 #include "lobby/commands/randomkarts.hpp"
 #include "lobby/commands/endgame.hpp"
 #include "lobby/commands/randomteams_hs.hpp"
+#include "lobby/commands/confirm.hpp"
+#include "lobby/commands/found.hpp"
 #include "lobby/commands/goalhistory.hpp"
 // special features
 #include "lobby/commands/pole.hpp"

@@ -13,6 +13,7 @@
 #include "utils/string_utils.hpp"
 
 #include <algorithm>
+#include <sstream>
 
 HideAndSeekWorld::HideAndSeekWorld() : WorldWithRank()
 {

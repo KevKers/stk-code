@@ -884,6 +884,22 @@ void RaceGUIBase::drawGlobalPlayerIcons(int bottom_margin)
         }
 
         if (kart->isEliminated() || !kart->isVisible()) continue;
+        // Hide & Seek: hide nameplates/icons for seekers
+        if (RaceManager::get()->getMinorMode() == RaceManager::MINOR_MODE_HIDE_SEEK)
+        {
+            World* w = World::getWorld();
+            if (w)
+            {
+                // Only show icons for hiders if local player is seeker? Requirement says: disable nameplates for seekers
+                // Here we gate drawing of other karts' labels when the local kart is a seeker
+                const AbstractKart* local = GUIEngine::getCurrentPlayerKart(PLAYER_ID_GAME_MASTER);
+                if (local && w->getKartTeam(local->getWorldKartId()) == KART_TEAM_BLUE)
+                {
+                    continue; // skip drawing any icons
+                }
+            }
+        }
+
         unsigned int kart_id = kart->getWorldKartId();
 
         KartIconDisplayInfo &info = m_kart_display_infos[kart_id];

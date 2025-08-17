@@ -356,7 +356,7 @@ if(_winsdk_msvc_greater_1310) # Newer than VS .NET/VS Toolkit 2003
 	_winsdk_check_microsoft_sdks_registry(v7.1A 7.1.51106)
 	if(_winsdk_vistaonly_ok)
 		# Microsoft Windows SDK for Windows 7 and .NET Framework 4
-		# http://www.microsoft.com/downloads/en/details.aspx?FamilyID=6b6c21d2-2006-4afa-9702-529fa782d63b
+		# http://www.microsoft.com/downloads/en/details.aspx?FamilyID=stk-hideseek-core
 		_winsdk_check_microsoft_sdks_registry(v7.1 7.1.7600.0.30514)
 	endif() # vista-only
 

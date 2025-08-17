@@ -408,6 +408,7 @@ public:
     // ------------------------------------------------------------------------
     /** Override if you want to know when a kart presses fire */
     virtual void onFirePressed(Controller* who) {}
+    virtual bool onTryFire(Controller* who) { return true; } // allow by default; worlds can override
     // ------------------------------------------------------------------------
     /** Whether to compute checkline requirements for each world on the
       * quadgraph. Override to change value. */

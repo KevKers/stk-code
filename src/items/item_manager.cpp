@@ -417,6 +417,23 @@ void  ItemManager::checkItemHit(AbstractKart* kart)
             continue;
         }
 
+        // HS Phase 7: Seekers cannot pick up items from boxes
+        if (World* w = World::getWorld())
+        {
+            if (dynamic_cast<HideAndSeekWorld*>(w))
+            {
+                const int wid = kart->getWorldKartId();
+                if (wid >= 0 && wid < (int)w->getNumKarts())
+                {
+                    if (w->getKartTeam(wid) == KART_TEAM_BLUE)
+                    {
+                        // Ignore pickup for seekers
+                        continue;
+                    }
+                }
+            }
+        }
+
 
         // To allow inlining and avoid including kart.hpp in item.hpp,
         // we pass the kart and the position separately.

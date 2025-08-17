@@ -33,6 +33,15 @@ bool PowerUpHintCommand::execute(nnwcli::CommandExecutorContext* ctx, void* data
         return false;
     }
 
+    // Only allow after unlock seconds
+    int unlock = (int)ServerConfig::m_hs_hint_unlock_seconds;
+    if (w->getTicksSinceStart() < stk_config->time2Ticks((float)unlock))
+    {
+        ctx->addLog("You can only change hint uses after the hint unlock time.");
+        ctx->flush();
+        return false;
+    }
+
     // Set for this round
     hs->setHintMaxUsesForRound(uses);
     std::string msg = StringUtils::insertValues("Set /hint uses to %d for this round.", uses);

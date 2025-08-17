@@ -97,6 +97,7 @@
 #include "lobby/commands/found.hpp"
 #include "lobby/commands/hint.hpp"
 #include "lobby/commands/poweruphint.hpp"
+#include "lobby/commands/allowstart.hpp"
 #include "lobby/commands/goalhistory.hpp"
 // special features
 #include "lobby/commands/pole.hpp"

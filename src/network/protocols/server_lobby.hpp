@@ -83,7 +83,7 @@ class ServerLobby : public LobbyProtocol
     friend class AutoteamsVariantVoteCommand;
     friend class RPSCommand;
     friend class JumblewordCommand;
-public:	
+public: 
     typedef std::map<STKPeer*,
                       std::weak_ptr<NetworkPlayerProfile>>
         PoleVoterMap;
@@ -302,6 +302,13 @@ private:
     bool m_allow_powerupper = false;
     bool m_show_elo = false;
     bool m_show_rank = false;
+
+    // allowstart gating
+    bool m_allow_start = true;
+public:
+    void setAllowStart(bool allow) { m_allow_start = allow; }
+    bool isStartAllowed() const { return m_allow_start; }
+private:
 
     // connection management
     void clientDisconnected(Event* event);

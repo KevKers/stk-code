@@ -578,6 +578,9 @@ void RaceGUI::drawGlobalMiniMap()
 
     // draw a map when arena has a navigation mesh.
     Track *track = Track::getCurrentTrack();
+
+    // Hide & Seek: hide nameplates for seekers by bailing early in icon draw below
+
     if ( (track->isArena() || track->isSoccer()) && !(track->hasNavMesh()) )
         return;
 

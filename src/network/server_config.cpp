@@ -56,6 +56,8 @@ std::string g_server_config_path;
 std::string m_server_uid;
 // ============================================================================
 FloatServerConfigParam::FloatServerConfigParam(float default_value,
+#include "network/server_config.hpp"
+
                                                const char* param_name,
                                                const char* comment)
                       : FloatUserConfigParam(param_name, comment)

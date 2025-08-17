@@ -62,6 +62,8 @@ FloatServerConfigParam::FloatServerConfigParam(float default_value,
 {
     m_can_be_deleted = false;
     m_value = default_value;
+static inline void add_server_param(UserConfigParam* p) { g_server_params.push_back(p); }
+
     m_default_value = default_value;
     g_server_params.push_back(this);
 }   // FloatServerConfigParam

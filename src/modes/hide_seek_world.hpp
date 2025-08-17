@@ -1,5 +1,5 @@
 //  SuperTuxKart - a fun racing game with go-kart
-//  Hide and Seek mode (Phases 1-4)
+//  Hide and Seek mode (Phases 1-7 implemented)
 //  GPLv3-or-later
 
 #ifndef HIDE_SEEK_WORLD_HPP
@@ -39,7 +39,8 @@ public:
     virtual const std::string& getIdent() const OVERRIDE;
     virtual bool useFastMusicNearEnd() const OVERRIDE { return false; }
     virtual bool shouldDrawTimer() const OVERRIDE { return true; }
-    virtual bool haveBonusBoxes() OVERRIDE { return false; } // disable pickups
+    // Phase 7: allow boxes to exist, seekers will ignore pickups in ItemManager
+    virtual bool haveBonusBoxes() OVERRIDE { return true; }
 
     // Projectile hit hook
     virtual bool kartHit(int kart_id, int hitter = -1) OVERRIDE;
@@ -51,8 +52,19 @@ public:
                            float max_distance_m);
 
     // Hint handling for /hint
+    // Returns true when a hint was produced, false with out_message explaining why
     bool handleHintFor(const std::string& seeker_name_utf8,
                        std::string& out_message);
+
+    // Admin helpers for phase 5
+    void setHintMaxUsesForRound(int n) { m_hint_max_uses_this_round = n; }
+
+    // Phase 7: gating for seeker firing and cooldown management
+    bool shouldAllowSeekerFire(int seeker_world_id);
+    void applySeekerRefireCooldown(int seeker_world_id, float seconds);
+
+    // Utility distance helpers
+    float getNearestHiderDistanceFrom(int seeker_world_id, int* out_hider_world_id = nullptr) const;
 
 private:
     // Phase/time
@@ -82,9 +94,17 @@ private:
     bool allHidersEliminated() const;
     void broadcastAll(const std::string& msg);
 
-    // Per-seeker hint usage/cooldown
-    std::unordered_map<int,int> m_hint_uses_left;
-    std::unordered_map<int,int> m_hint_next_tick;
+    // Phase 5: Hint management per seeker
+    // uses left and next tick when hint can be used again
+    std::unordered_map<int,int> m_hint_uses_left;   // seeker_world_id -> remaining uses
+    std::unordered_map<int,int> m_hint_next_tick;   // seeker_world_id -> next allowed tick for /hint
+    int m_hint_max_uses_this_round;                 // default from ServerConfig, adjustable with /poweruphint
+
+    // Phase 5: unlock time (seconds from game start) when /hint becomes available
+    int m_hint_unlock_seconds;
+
+    // Phase 7: Seeker refire cooldown management (ticks)
+    std::unordered_map<int,int> m_fire_cooldown_next_tick; // seeker_world_id -> next allowed fire tick for refund cooldown
 };
 
 #endif // HIDE_SEEK_WORLD_HPP

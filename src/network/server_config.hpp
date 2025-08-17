@@ -54,6 +54,8 @@ namespace ServerConfig
         SERVER_CFG_DEFAULT(FloatServerConfigParam(50.0f, "hs-warm-max", "HS: Warm if distance in [warm-min, warm-max]."));
     SERVER_CFG_PREFIX IntServerConfigParam m_hs_hint_default_uses
         SERVER_CFG_DEFAULT(IntServerConfigParam(5, "hs-hint-default-uses", "HS: default per-seeker /hint uses per round."));
+    SERVER_CFG_PREFIX IntServerConfigParam m_hs_hint_unlock_seconds
+        SERVER_CFG_DEFAULT(IntServerConfigParam(420, "hs-hint-unlock-seconds", "HS: number of seconds from round start after which /hint becomes available (default 7min)."));
 
     // ========================================================================
     class FloatServerConfigParam : public FloatUserConfigParam
@@ -191,8 +193,8 @@ namespace ServerConfig
         "Show the rank before the username in the lobby."));
 
     SERVER_CFG_PREFIX StringServerConfigParam m_soccer_ranking_file_bcf
-	    SERVER_CFG_DEFAULT(StringServerConfigParam("", "soccer-ranking-file",
-	    "Path to the soccer ranking file that contains player statistics and ELO ratings."));
+            SERVER_CFG_DEFAULT(StringServerConfigParam("", "soccer-ranking-file",
+            "Path to the soccer ranking file that contains player statistics and ELO ratings."));
 
     SERVER_CFG_PREFIX BoolServerConfigParam m_allow_heavyparty
         SERVER_CFG_DEFAULT(BoolServerConfigParam(false, "allow-heavyparty",
@@ -243,35 +245,35 @@ namespace ServerConfig
         SERVER_CFG_DEFAULT(BoolServerConfigParam(false, "soccer-log","Soccer Log (true or false.)"));
 
     SERVER_CFG_PREFIX BoolServerConfigParam  m_race_log
-	SERVER_CFG_DEFAULT(BoolServerConfigParam(false, "race-log", "Race log (true or false)"));
+        SERVER_CFG_DEFAULT(BoolServerConfigParam(false, "race-log", "Race log (true or false)"));
 
     SERVER_CFG_PREFIX BoolServerConfigParam  m_is_world_record_race
-	SERVER_CFG_DEFAULT(BoolServerConfigParam(false, "is-world-record-race", "Is world record race (true or false)"));
+        SERVER_CFG_DEFAULT(BoolServerConfigParam(false, "is-world-record-race", "Is world record race (true or false)"));
 
     SERVER_CFG_PREFIX StringServerConfigParam m_soccer_log_path
         SERVER_CFG_DEFAULT(StringServerConfigParam("soccer_log.txt", "soccer-log-path", "Directory where the soccer log should be written to with / at the end."));
  
     SERVER_CFG_PREFIX StringServerConfigParam m_server_livesoccer_port
-	SERVER_CFG_DEFAULT(StringServerConfigParam("9877", "server-livesoccer-port", "Port for live soccer socket"));
+        SERVER_CFG_DEFAULT(StringServerConfigParam("9877", "server-livesoccer-port", "Port for live soccer socket"));
 
     SERVER_CFG_PREFIX StringServerConfigParam m_server_livesoccer_ip
-	SERVER_CFG_DEFAULT(StringServerConfigParam("127.0.0.1", "server-livesoccer-ip", "IP for live soccer socket"));
+        SERVER_CFG_DEFAULT(StringServerConfigParam("127.0.0.1", "server-livesoccer-ip", "IP for live soccer socket"));
 
     SERVER_CFG_PREFIX StringServerConfigParam m_soccer_ranking_path
-	SERVER_CFG_DEFAULT(StringServerConfigParam("soccer_ranking.txt", "soccer-ranking-path", "File path to the soccer ranking file."));
+        SERVER_CFG_DEFAULT(StringServerConfigParam("soccer_ranking.txt", "soccer-ranking-path", "File path to the soccer ranking file."));
 
     SERVER_CFG_PREFIX StringServerConfigParam m_ranked_script_path
-	SERVER_CFG_DEFAULT(StringServerConfigParam("soccer_ranking.py", "ranked-script-path", "File path to the ranking Python script."));
+        SERVER_CFG_DEFAULT(StringServerConfigParam("soccer_ranking.py", "ranked-script-path", "File path to the ranking Python script."));
 
     SERVER_CFG_PREFIX StringServerConfigParam m_update_script_path
-	SERVER_CFG_DEFAULT(StringServerConfigParam("update.py", "update-script-path", "File path to the update script."));   
+        SERVER_CFG_DEFAULT(StringServerConfigParam("update.py", "update-script-path", "File path to the update script."));   
 
     SERVER_CFG_PREFIX StringServerConfigParam m_replay_dir
-	    SERVER_CFG_DEFAULT(StringServerConfigParam("replay/", "replay-directory", "Directory path for storing replay files."));
+            SERVER_CFG_DEFAULT(StringServerConfigParam("replay/", "replay-directory", "Directory path for storing replay files."));
 
     SERVER_CFG_PREFIX StringServerConfigParam m_jumble_wordlist_path
-	    SERVER_CFG_DEFAULT(StringServerConfigParam("wordlist.txt", "jumble-wordlist-path",
-	    "Path to the word list file for jumble"));
+            SERVER_CFG_DEFAULT(StringServerConfigParam("wordlist.txt", "jumble-wordlist-path",
+            "Path to the word list file for jumble"));
 
     SERVER_CFG_PREFIX BoolServerConfigParam m_wan_server
         SERVER_CFG_DEFAULT(BoolServerConfigParam(true, "wan-server",
@@ -345,15 +347,15 @@ namespace ServerConfig
         "to false, the server will randomly pick the next track to play."));
 
     SERVER_CFG_PREFIX StringServerConfigParam m_excluded_tracks
-	    SERVER_CFG_DEFAULT(StringServerConfigParam("",
-	    "excluded-tracks",
-	    "Tracks that will never be selected if track-voting = false."));
+            SERVER_CFG_DEFAULT(StringServerConfigParam("",
+            "excluded-tracks",
+            "Tracks that will never be selected if track-voting = false."));
 
-	SERVER_CFG_PREFIX StringServerConfigParam m_allowed_missing_tracks
-	    SERVER_CFG_DEFAULT(StringServerConfigParam(
-	    "hole_drop oasis",
-	    "allowed-missing-tracks",
-	    "Space-separated list of standard track identifiers that clients are allowed to miss without being blocked from joining."));
+        SERVER_CFG_PREFIX StringServerConfigParam m_allowed_missing_tracks
+            SERVER_CFG_DEFAULT(StringServerConfigParam(
+            "hole_drop oasis",
+            "allowed-missing-tracks",
+            "Space-separated list of standard track identifiers that clients are allowed to miss without being blocked from joining."));
 
     SERVER_CFG_PREFIX BoolServerConfigParam m_command_track_mode
         SERVER_CFG_DEFAULT(BoolServerConfigParam(false, "command-track-mode",

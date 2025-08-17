@@ -178,22 +178,22 @@ void Powerup::set(PowerupManager::PowerupType type, int n)
             break;
 
         case PowerupManager::POWERUP_PARACHUTE:
-	    m_sound_use = SFXManager::get()->createSoundSource("parachute");
-	    break;
-	    
-	case PowerupManager::POWERUP_BUBBLEGUM:
-	    m_sound_use = SFXManager::get()->createSoundSource("goo");
-	    break;
+            m_sound_use = SFXManager::get()->createSoundSource("parachute");
+            break;
+            
+        case PowerupManager::POWERUP_BUBBLEGUM:
+            m_sound_use = SFXManager::get()->createSoundSource("goo");
+            break;
 
-	case PowerupManager::POWERUP_SWITCH: 
-	    m_sound_use = SFXManager::get()->createSoundSource("swap");
-	    break;
+        case PowerupManager::POWERUP_SWITCH: 
+            m_sound_use = SFXManager::get()->createSoundSource("swap");
+            break;
 
         case PowerupManager::POWERUP_NOTHING:
-	case PowerupManager::POWERUP_CAKE:
+        case PowerupManager::POWERUP_CAKE:
         case PowerupManager::POWERUP_PLUNGER:
-	default:
-	    m_sound_use = SFXManager::get()->createSoundSource("shoot");
+        default:
+            m_sound_use = SFXManager::get()->createSoundSource("shoot");
             break;
     }
 
@@ -283,6 +283,30 @@ void Powerup::use()
     }
 
     m_number--;
+    // HS Phase 7: Restrict seekers from firing unless near a hider; refund on miss handled in world
+    if (world)
+    {
+        if (RaceManager::get()->getMinorMode() == RaceManager::MINOR_MODE_HIDE_SEEK)
+        {
+            HideAndSeekWorld* hs = dynamic_cast<HideAndSeekWorld*>(world);
+            if (hs)
+            {
+                int wid = m_kart->getWorldKartId();
+                // Seekers are blue team
+                if (world->getKartTeam(wid) == KART_TEAM_BLUE)
+                {
+                    if (!hs->shouldAllowSeekerFire(wid))
+                    {
+                        // refund and cooldown
+                        setNum(m_number + 1);
+                        hs->applySeekerRefireCooldown(wid, 1.5f);
+                        return;
+                    }
+                }
+            }
+        }
+    }
+
     World *world = World::getWorld();
     ItemManager* im = Track::getCurrentTrack()->getItemManager();
     switch (m_type)

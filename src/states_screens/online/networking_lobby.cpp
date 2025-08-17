@@ -196,7 +196,7 @@ void NetworkingLobby::init()
     m_ready_text = _("Ready");
     //I18N: Live join is displayed in networking lobby to allow players
     //to join the current started in-progress game
-    m_live_join_text = _("Live join");
+    m_live_join_text = _("Live join"); // HS note: clicking will be denied with server message when HS is active
     //I18N: In networking lobby to configuration server settings
     m_configuration_text = _("Configuration");
     //I18N: Spectate is displayed in networking lobby to allow players

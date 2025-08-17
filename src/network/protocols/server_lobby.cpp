@@ -2646,6 +2646,11 @@ void ServerLobby::startSelection(const Event *event)
             sendStringToPeer("Starting is temporarily disabled by admin (/allowstart 1 to re-enable).", event->getPeerSP().get());
             return;
         }
+        if (!isStartAllowed())
+        {
+            sendStringToPeer("Starting is temporarily disabled by admin (/allowstart 1 to re-enable).", event->getPeerSP().get());
+            return;
+        }
         if (not_singleslot && ServerConfig::m_owner_less)
         {
             // toggle ready

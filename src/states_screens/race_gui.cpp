@@ -584,16 +584,16 @@ void RaceGUI::drawGlobalMiniMap()
     if ( (track->isArena() || track->isSoccer()) && !(track->hasNavMesh()) )
         return;
 
-    // Hide & Seek: hide minimap for seekers
+    // Hide & Seek: hide minimap for seekers (use first local player)
     if (RaceManager::get()->getMinorMode() == RaceManager::MINOR_MODE_HIDE_SEEK)
     {
         World* w = World::getWorld();
         if (w)
         {
-            const AbstractKart* k = kart;
-            if (k)
+            AbstractKart* local = w->getLocalPlayerKart(0);
+            if (local)
             {
-                KartTeam team = w->getKartTeam(k->getWorldKartId());
+                KartTeam team = w->getKartTeam(local->getWorldKartId());
                 if (team == KART_TEAM_BLUE)
                     return;
             }

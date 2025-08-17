@@ -639,6 +639,30 @@ void ServerLobby::handleChat(Event* event)
         }
         // evil chat log
         Log::info("ServerLobby", "[CHAT] %s", StringUtils::wideToUtf8(message).c_str());
+        // HS: chat alias "Found player X" to trigger /found X
+        if (RaceManager::get()->getMinorMode() == RaceManager::MINOR_MODE_HIDE_SEEK)
+        {
+            std::string mu = StringUtils::wideToUtf8(message);
+            const std::string prefix = "Found player ";
+            size_t at = mu.find(prefix);
+            if (at != std::string::npos)
+            {
+                std::string candidate = mu.substr(at + prefix.size());
+                // trim
+                candidate.erase(candidate.find_last_not_of(" \n\r\t") + 1);
+                if (!candidate.empty())
+                {
+                    NetworkString* cmd = getNetworkString();
+                    cmd->setSynchronous(true);
+                    std::string t = std::string("/found ") + candidate;
+                    cmd->addUInt8(LE_CHAT).encodeString16(StringUtils::utf8ToWide(t));
+                    // Route only to server command executor (self)
+                    handleServerCommand(nullptr, event->getPeerSP(), t);
+                    delete cmd;
+                }
+            }
+        }
+
 
         NetworkString* chat = getNetworkString();
         chat->setSynchronous(true);

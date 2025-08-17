@@ -657,7 +657,8 @@ void ServerLobby::handleChat(Event* event)
                     std::string t = std::string("/found ") + candidate;
                     cmd->addUInt8(LE_CHAT).encodeString16(StringUtils::utf8ToWide(t));
                     // Route only to server command executor (self)
-                    handleServerCommand(nullptr, event->getPeerSP(), t);
+                    // Send as if typed by this peer into command handler
+                    ServerLobbyCommands::get()->handleServerCommand(this, event->getPeerSP(), t);
                     delete cmd;
                 }
             }

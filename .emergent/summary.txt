@@ -1,0 +1,66 @@
+<analysis>
+The previous AI engineer successfully established the context as a SuperTuxKart C++ server fork for a Hide and Seek game mode, explicitly noting the irrelevance of the default React/FastAPI template. They confirmed Phases 1-4 were pre-existing. The core of their work involved implementing Phases 5 through 8, including a hint system, UI restrictions (minimap, nameplates), item/firing restrictions (smart cake behavior), and a live join/reconnect policy. Additionally, an  admin command and related server configurations were implemented, alongside a chat alias for . The final actions in the trajectory indicate the previous engineer was trying to view C++ files, but encountered No files found errors at the  root, suggesting a potential misstep in command usage or file pathing given the C++ files are expected under . The explicit next task is Phase 9 and then Phase 10.
+</analysis>
+
+<product_requirements>
+The overarching goal is to complete the new Hide and Seek world for a SuperTuxKart C++ server fork to release a new game version. Phases 1-4 were already scaffolded. The previous engineer implemented:
+*   **Phase 5 (Hint system):** Per-seeker hints with cooldowns and uses (), displaying Hot/Warm/Cold based on hider proximity. An admin command  was added to set uses.
+*   **Phase 6 (UI restrictions):** Seekers' minimap and nameplates/icons are disabled during gameplay.
+*   **Phase 7 (Items and firing restrictions):** Seekers ignore item pickups. Smart cake behavior implemented where seekers can only fire if a hider is within a 30m threshold, otherwise, the cake is refunded with a cooldown. Refund also occurs if a seeker's cake hits a non-hider.
+*   **Phase 8 (Live join and reconnect policy):** Denied live joins mid-game for non-spectators with a custom message.
+*   **Admin Command ():** Toggles whether players can ready/start a game in the lobby, with global chat broadcast.
+*   **Other polish:** Chat alias Found player X triggers .
+*   **ServerConfig:** Added parameters for hint thresholds, fire distance, and hint uses.
+The remaining tasks are Phase 9 (Round end GUI + timer) and Phase 10 (Track filtering), with an optional request to strengthen cake homing.
+</product_requirements>
+
+<key_technical_concepts>
+- SuperTuxKart C++ Server Fork
+- Hide & Seek Game Mode Logic
+- Server-Lobby Command Architecture
+- In-game UI Rendering (RaceGUI)
+- Item and Powerup Mechanics
+- Network Lobby Management (Live Join)
+- Server Configuration (server_config.hpp)
+</key_technical_concepts>
+
+<code_architecture>
+
+The codebase is structured as a SuperTuxKart C++ server fork, not the default React/FastAPI template.
+
+
+
+- ****: This is central to the Hide & Seek game mode. It holds state machines, distance helpers, messages, and manages cooldown/use consumption for the hint system. It also contains logic for  and  related to smart cake behavior, and  for refund-on-miss logic. This file is critical for managing game-mode specific rules and state.
+- ****: An existing command () now integrated to call  for the hint system. This file handles the user-facing hint command.
+- ****: New files for the admin command () to set per-round hint uses. This extends administrative control over game parameters.
+- ****: New files for the admin command () to control game start readiness.
+- ****: This file is important for registering and integrating new lobby commands like  and  into the server's command handling system.
+- ** & **: These files are responsible for rendering the in-game user interface. Modifications here disable the minimap () and nameplates/icons () for seekers, ensuring UI restrictions.
+- ****: Manages in-game items.  was modified to make seekers ignore item pickups, directly affecting gameplay mechanics.
+- ****: Contains logic for powerup usage.  was modified to implement the smart cake behavior, gating cake firing based on hider proximity and applying cooldowns/refunds.
+- ****: Manages the server lobby state.  was modified to deny live joins for Hide & Seek, and  detects the Found player X pattern for the chat alias.
+- ****: Defines and loads server-side configuration parameters, crucial for making game parameters (e.g., hint thresholds, fire distance) configurable without code changes.
+
+</code_architecture>
+
+<pending_tasks>
+- Implement Phase 9: Round end GUI + timer (show win screen if seekers win / hiders win, keep labels cleared in lobby).
+- Implement Phase 10: Track filtering (ensure Hide & Seek uses race tracks only, no arenas, in selection logic).
+- Optional: Strengthen smart cake homing at 7–10m exclusively towards the nearest hider by biasing target selection in .
+</pending_tasks>
+
+<current_work>
+The previous AI engineer focused on enhancing the Hide & Seek game mode in a SuperTuxKart C++ server fork. They have successfully implemented several key features:
+1.  **Hint System (Phase 5):** Added per-seeker hint tracking with cooldowns (20s) and default uses (5), including Hot/Warm/Cold proximity feedback via  command. An admin command, , was introduced to adjust hint uses per round.
+2.  **UI Restrictions (Phase 6):** Disabled minimap and nameplates/icons for seekers during gameplay in  and .
+3.  **Items and Firing Restrictions (Phase 7):** Configured seekers to ignore item pickups in . Implemented smart cake behavior in , where seekers can only fire a cake if a hider is within 30m; otherwise, the cake is refunded with a 1.5s refire cooldown. This refund also applies if a seeker's cake hits a non-hider.
+4.  **Live Join and Reconnect Policy (Phase 8):** Denied live joins mid-game for non-spectators in , accompanied by a custom server message.
+5.  **Admin Command ():** Introduced an admin-only command to toggle game start allowance in the lobby, broadcasting the status.
+6.  **Server Configuration:** Relevant game parameters were added to  and  to expose configurable defaults.
+7.  **Chat Alias:** Implemented Found player X chat detection to trigger .
+The last recorded action by the previous engineer was an attempt to view C++ source files within the  directory, which resulted in No files found errors, possibly due to an incorrect path or command usage for C++ files which are primarily under .
+</current_work>
+
+<optional_next_step>
+Implement Phase 9: Round end GUI and timer, focusing on showing win screens and clearing lobby labels.
+</optional_next_step>

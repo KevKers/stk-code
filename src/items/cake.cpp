@@ -23,6 +23,9 @@
 
 #include "io/xml_node.hpp"
 #include "karts/abstract_kart.hpp"
+#include "modes/hide_seek_world.hpp"
+#include "modes/world.hpp"
+#include "race/race_manager.hpp"
 #include "utils/constants.hpp"
 #include "utils/random_generator.hpp"
 
@@ -118,6 +121,29 @@ void Cake::onFireFlyable()
     getClosestKart(&closest_kart, &kart_dist_squared, &direction,
                    m_owner /* search in front of this kart */, backwards);
 
+    // OPTIONAL HS: strengthen homing in 7-10m range to nearest hider
+    if (RaceManager::get()->getMinorMode() == RaceManager::MINOR_MODE_HIDE_SEEK)
+    {
+        HideAndSeekWorld* hs = dynamic_cast<HideAndSeekWorld*>(World::getWorld());
+        if (hs)
+        {
+            int my_id = m_owner->getWorldKartId();
+            // Seekers are blue team
+            if (World::getWorld()->getKartTeam(my_id) == KART_TEAM_BLUE)
+            {
+                int hid_id = -1;
+                float d = hs->getNearestHiderDistanceFrom(my_id, &hid_id);
+                if (hid_id >= 0 && d >= 7.0f && d <= 10.0f)
+                {
+                    closest_kart = World::getWorld()->getKart(hid_id);
+                    // refresh direction for this new target
+                    direction = (closest_kart->getXYZ() - m_owner->getXYZ()).normalized();
+                    kart_dist_squared = (closest_kart->getXYZ() - m_owner->getXYZ()).length2();
+                }
+            }
+        }
+    }
+
     // aim at this kart if 1) it's not too far, 2) if the aimed kart's speed
     // allows the projectile to catch up with it
     //
@@ -138,31 +164,14 @@ void Cake::onFireFlyable()
         btQuaternion q;
         q = trans.getRotation() * btQuaternion(btVector3(0, 1, 0), fire_angle);
         trans.setRotation(q);
-        m_initial_velocity = Vec3(0.0f, up_velocity, m_speed);
-
-        createPhysics(forward_offset, m_initial_velocity,
-                      new btCylinderShape(0.5f*m_extend),
-                      0.5f /* restitution */, gravity_vector,
-                      true /* rotation */, false /* backwards */, &trans);
-    }
-    else
-    {
-        m_target = NULL;
-        // kart is too far to be hit. so throw the projectile in a generic way,
-        // straight ahead, without trying to hit anything in particular
-        trans = m_owner->getAlignedTransform(pitch);
-
-        m_initial_velocity = Vec3(0.0f, up_velocity, m_speed);
-
-        createPhysics(forward_offset, m_initial_velocity,
-                      new btCylinderShape(0.5f*m_extend),
-                      0.5f /* restitution */, gravity_vector,
-                      true /* rotation */, backwards, &trans);
     }
 
-    //do not adjust height according to terrain
-    setAdjustUpVelocity(false);
-    m_body->setActivationState(DISABLE_DEACTIVATION);
-    m_body->clearForces();
-    m_body->applyTorque(btVector3(5.0f, -3.0f, 7.0f));
+    // apply rotation in pitch and a bit of an extra hack here
+    trans.setOrigin(trans.getOrigin() + trans.getBasis() * Vec3(0, 0.2f, 0));
+
+    setTrans(trans);
+
+    setVelocity(Vec3(sinf(m_owner->getHeading())*m_speed,
+                      up_velocity,
+                      cosf(m_owner->getHeading())*m_speed));
 }   // onFireFlyable

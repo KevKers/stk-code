@@ -26,6 +26,8 @@ HideAndSeekWorld::HideAndSeekWorld() : WorldWithRank()
     m_saved_prev_hide_time = -1;
     m_hint_max_uses_this_round = 0;
     m_hint_unlock_seconds = 0;
+    m_seekers_win = false;
+    m_race_over_set = false;
 }
 
 HideAndSeekWorld::~HideAndSeekWorld()
@@ -213,6 +215,22 @@ bool HideAndSeekWorld::kartHit(int kart_id, int hitter)
     const int when = getTimeTicks() + stk_config->time2Ticks(5.0f);
     m_pending_elim_ticks[kart_id] = when;
     return true;
+}
+
+void HideAndSeekWorld::enterRaceOverState()
+{
+    // Determine winner and store for GUI
+    const int elapsed_ticks = getTimeTicks() - m_game_start_ticks;
+    const int cap_ticks = stk_config->time2Ticks((float)m_total_cap_seconds);
+    if (allHidersEliminated())
+        m_seekers_win = true;
+    else if (elapsed_ticks >= cap_ticks)
+        m_seekers_win = false; // hiders survive till cap
+    else
+        m_seekers_win = false; // default safety
+    m_race_over_set = true;
+
+    WorldWithRank::enterRaceOverState();
 }
 
 bool HideAndSeekWorld::confirmHiderKart(int kart_id)

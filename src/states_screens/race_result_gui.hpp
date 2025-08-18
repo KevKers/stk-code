@@ -221,6 +221,7 @@ private:
     void drawTeamScorers(KartTeam team, int x, int y, int height);
     void displayBenchmarkSummary();
     void displayScreenShots();
+    void displayHideSeekResults();
 
     int  getFontHeight () const;
 

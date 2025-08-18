@@ -45,6 +45,9 @@ public:
     // Projectile hit hook
     virtual bool kartHit(int kart_id, int hitter = -1) OVERRIDE;
 
+    // Called once race is considered over to set winner flag and go to results
+    virtual void enterRaceOverState() OVERRIDE;
+
     // Command helpers
     bool confirmHiderKart(int kart_id);
     bool manualFoundByName(const std::string& seeker_name_utf8,
@@ -65,6 +68,10 @@ public:
 
     // Utility distance helpers
     float getNearestHiderDistanceFrom(int seeker_world_id, int* out_hider_world_id = nullptr) const;
+
+    // Result helpers used by GUI
+    bool didSeekersWin() const { return m_race_over_set && m_seekers_win; }
+    bool didHidersWin() const { return m_race_over_set && !m_seekers_win; }
 
 private:
     // Phase/time
@@ -105,6 +112,10 @@ private:
 
     // Phase 7: Seeker refire cooldown management (ticks)
     std::unordered_map<int,int> m_fire_cooldown_next_tick; // seeker_world_id -> next allowed fire tick for refund cooldown
+
+    // Phase 9: winner info
+    bool m_seekers_win;
+    bool m_race_over_set;
 };
 
 #endif // HIDE_SEEK_WORLD_HPP

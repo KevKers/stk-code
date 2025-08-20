@@ -65,3 +65,52 @@ The last recorded action by the previous engineer was an attempt to view C++ sou
 <optional_next_step>
 Implement Phase 9: Round end GUI and timer, focusing on showing win screens and clearing lobby labels.
 </optional_next_step>
+
+<work_done_aug21_2025>
+What I implemented in this session (Phases 9–10 + polish):
+
+1) Phase 9 – Round end GUI for Hide & Seek
+- Results header: shows “Blue Team Wins” / “Red Team Wins”.
+- Timer: switched in-race clock to countdown (like FFA). Results screen shows elapsed/total and remaining.
+- Soccer-style two columns with your spec:
+  - Left: "Found" → names + found time (mm:ss.xx)
+  - Right: "Remaining" → names only
+- HideAndSeekWorld tracks first-found timestamp per hider and exposes getters used by the GUI.
+- Per-kart win/lose state set so end animations/music match the winning team.
+
+2) Phase 10 – Track filtering for Hide & Seek
+- Server lobby track list filters to race tracks (excluded arenas/soccer/ctf) when HS is selected.
+
+3) Online client footer buttons and disconnect
+- On HS result screen (client only):
+  - Right button: “Continue” (green_check)
+  - Left button: “Quit server” (main_quit)
+- Implemented eventCallback to properly disconnect the client and return to main menu:
+  STKHost::get()->disconnect(); RaceManager::exitRace(); StateManager::resetAndGoToScreen(MainMenuScreen).
+- If you want a specific online server browser screen target instead of main menu, share the screen singleton and I’ll wire it.
+
+4) Smart cake homing and icon
+- Smart cake projectile created for seekers in HS; stronger homing was previously added (7–10m bias). If you need more tuning, say the exact band/strength.
+- Icon: prefer PNG under data/gui/icons/. I prepared the path data/gui/icons/cake_plus.png; once the actual image is placed there, I can overlay it on the cake HUD icon for seekers in HS. Currently a placeholder is created; please replace it with your provided art.
+
+Open items / next work recommendations:
+- Wire the cake_plus.png overlay in RaceGUIBase::drawPowerupIcons (HS + seeker + cake) — small, contained change once asset is in place.
+- Route “Quit server” to the exact online page you showed in your screenshot (currently goes to MainMenuScreen). Provide the screen class/singleton name so I can target it (e.g., an Online/Browser screen singleton).
+- Confirm if any lobby nameplate/icon clearing is still required post-match in networking_lobby.cpp per your earlier note.
+- Optional: Further strengthen smart cake targeting beyond 7–10m or adjust thresholds in server_config.
+
+Testing notes for your compilation:
+- Build stk-code hidenseek branch with these changes. Test HS flow offline and online:
+  - Verify results screen columns and times.
+  - Verify countdown HUD timer.
+  - On client, test Continue vs Quit server; ensure disconnect is clean.
+  - Confirm track selection excludes arenas for HS.
+
+Key files touched:
+- src/modes/hide_seek_world.hpp/.cpp – found-time storage, GUI helpers, countdown clock.
+- src/states_screens/race_result_gui.cpp – HS results layout, online buttons, event callback.
+- src/karts/kart.cpp – winner mapping for HS animations/music (earlier step).
+- src/items/projectile_manager.cpp – SmartCake class switch for seekers in HS (earlier step).
+- src/network/protocols/server_lobby.cpp – track filtering for HS (earlier step).
+
+</work_done_aug21_2025>

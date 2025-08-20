@@ -121,28 +121,6 @@ void Cake::onFireFlyable()
     getClosestKart(&closest_kart, &kart_dist_squared, &direction,
                    m_owner /* search in front of this kart */, backwards);
 
-    // OPTIONAL HS: strengthen homing in 7-10m range to nearest hider
-    if (RaceManager::get()->getMinorMode() == RaceManager::MINOR_MODE_HIDE_SEEK)
-    {
-        HideAndSeekWorld* hs = dynamic_cast<HideAndSeekWorld*>(World::getWorld());
-        if (hs)
-        {
-            int my_id = m_owner->getWorldKartId();
-            // Seekers are blue team
-            if (World::getWorld()->getKartTeam(my_id) == KART_TEAM_BLUE)
-            {
-                int hid_id = -1;
-                float d = hs->getNearestHiderDistanceFrom(my_id, &hid_id);
-                if (hid_id >= 0 && d >= 7.0f && d <= 10.0f)
-                {
-                    closest_kart = World::getWorld()->getKart(hid_id);
-                    // refresh direction for this new target
-                    direction = (closest_kart->getXYZ() - m_owner->getXYZ()).normalized();
-                    kart_dist_squared = (closest_kart->getXYZ() - m_owner->getXYZ()).length2();
-                }
-            }
-        }
-    }
 
     // aim at this kart if 1) it's not too far, 2) if the aimed kart's speed
     // allows the projectile to catch up with it

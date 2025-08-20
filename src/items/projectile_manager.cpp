@@ -24,6 +24,7 @@
 #include "items/cake.hpp"
 #include "items/plunger.hpp"
 #include "items/powerup_manager.hpp"
+#include "items/smart_cake.hpp"
 #include "items/powerup.hpp"
 #include "items/rubber_ball.hpp"
 #include "karts/abstract_kart.hpp"

@@ -53,6 +53,9 @@ void HideAndSeekWorld::init()
     m_hint_max_uses_this_round = (int)ServerConfig::m_hs_hint_default_uses;
     m_hint_unlock_seconds      = (int)ServerConfig::m_hs_hint_unlock_seconds;
 
+    // Use a countdown clock from total cap (like FFA)
+    WorldStatus::setClockMode(WorldStatus::CLOCK_COUNTDOWN, (float)m_total_cap_seconds);
+
     m_game_start_ticks = getTimeTicks();
     m_phase_start_ticks = m_game_start_ticks;
 
@@ -64,6 +67,9 @@ void HideAndSeekWorld::init()
     m_hint_uses_left.clear();
     m_hint_next_tick.clear();
     m_fire_cooldown_next_tick.clear();
+
+    // Init found-time vector for hiders
+    m_hider_found_time_sec.assign(getNumKarts(), -1.0f);
 
     Log::info("HideSeekWorld", "Initialized Hide and Seek (hide=%ds, cap=%ds).",
               m_hide_phase_seconds_current, m_total_cap_seconds);
@@ -212,6 +218,13 @@ bool HideAndSeekWorld::kartHit(int kart_id, int hitter)
         victim->getController()->getName());
     broadcastAll(StringUtils::insertValues("Player %s has been found", victim_name.c_str()));
 
+    // Record found time once
+    if (m_hider_found_time_sec[kart_id] < 0.0f)
+    {
+        float elapsed_sec = stk_config->ticks2Time(getTimeTicks() - m_game_start_ticks);
+        m_hider_found_time_sec[kart_id] = elapsed_sec;
+    }
+
     const int when = getTimeTicks() + stk_config->time2Ticks(5.0f);
     m_pending_elim_ticks[kart_id] = when;
     return true;
@@ -230,7 +243,23 @@ void HideAndSeekWorld::enterRaceOverState()
         m_seekers_win = false; // default safety
     m_race_over_set = true;
 
+    // Set race result per kart so win/lose animations/music work
+    for (unsigned i = 0; i < getNumKarts(); ++i)
+    {
+        bool win = false;
+        if (m_is_hider[i]) win = !m_seekers_win;
+        else if (m_is_seeker[i]) win = m_seekers_win;
+        AbstractKart* k = getKart(i);
+        if (k && !k->isGhostKart())
+            k->setRaceResult();
+    }
+
     WorldWithRank::enterRaceOverState();
+}
+
+int HideAndSeekWorld::getElapsedSeconds() const
+{
+    return stk_config->ticks2Time(getTimeTicks() - m_game_start_ticks);
 }
 
 bool HideAndSeekWorld::confirmHiderKart(int kart_id)
@@ -277,6 +306,13 @@ bool HideAndSeekWorld::manualFoundByName(const std::string& seeker_name,
     const std::string victim_name = StringUtils::wideToUtf8(
         getKart(target_id)->getController()->getName());
     broadcastAll(StringUtils::insertValues("Player %s has been found", victim_name.c_str()));
+
+    // Record found time once
+    if (m_hider_found_time_sec[target_id] < 0.0f)
+    {
+        float elapsed_sec = stk_config->ticks2Time(getTimeTicks() - m_game_start_ticks);
+        m_hider_found_time_sec[target_id] = elapsed_sec;
+    }
 
     const int when = getTimeTicks() + stk_config->time2Ticks(5.0f);
     m_pending_elim_ticks[target_id] = when;
@@ -488,4 +524,33 @@ bool HideAndSeekWorld::shouldAllowSeekerFire(int seeker_world_id)
 void HideAndSeekWorld::applySeekerRefireCooldown(int seeker_world_id, float seconds)
 {
     m_fire_cooldown_next_tick[seeker_world_id] = getTimeTicks() + stk_config->time2Ticks(seconds);
+}
+
+void HideAndSeekWorld::getFoundHiders(std::vector<std::pair<irr::core::stringw, float>>& out) const
+{
+    out.clear();
+    for (unsigned i = 0; i < getNumKarts(); ++i)
+    {
+        if (!m_is_hider[i]) continue;
+        float t = m_hider_found_time_sec[i];
+        if (t >= 0.0f)
+        {
+            irr::core::stringw nm = getKart(i)->getController()->getName();
+            out.emplace_back(nm, t);
+        }
+    }
+}
+
+void HideAndSeekWorld::getRemainingHiders(std::vector<irr::core::stringw>& out) const
+{
+    out.clear();
+    for (unsigned i = 0; i < getNumKarts(); ++i)
+    {
+        if (!m_is_hider[i]) continue;
+        if (getKart(i)->isEliminated()) continue; // already eliminated
+        if (m_hider_found_time_sec[i] < 0.0f) // never found yet
+        {
+            out.push_back(getKart(i)->getController()->getName());
+        }
+    }
 }

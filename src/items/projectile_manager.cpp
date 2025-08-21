@@ -193,8 +193,14 @@ std::shared_ptr<Flyable>
             f = std::make_shared<Plunger>(kart);
             break;
         case PowerupManager::POWERUP_CAKE:
-            f = std::make_shared<Cake>(kart);
+        {
+            if (RaceManager::get()->getMinorMode() == RaceManager::MINOR_MODE_HIDE_SEEK &&
+                World::getWorld()->getKartTeam(kart->getWorldKartId()) == KART_TEAM_BLUE)
+                f = std::make_shared<SmartCake>(kart);
+            else
+                f = std::make_shared<Cake>(kart);
             break;
+        }
         case PowerupManager::POWERUP_RUBBERBALL:
             f = std::make_shared<RubberBall>(kart);
             break;

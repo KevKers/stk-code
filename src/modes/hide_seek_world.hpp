@@ -11,6 +11,7 @@
 #include "network/protocols/server_lobby.hpp"
 #include "network/server_config.hpp"
 #include "config/stk_config.hpp"
+#include "irrString.h"
 
 #include <vector>
 #include <string>
@@ -72,6 +73,12 @@ public:
     // Result helpers used by GUI
     bool didSeekersWin() const { return m_race_over_set && m_seekers_win; }
     bool didHidersWin() const { return m_race_over_set && !m_seekers_win; }
+    int  getElapsedSeconds() const;
+    int  getTotalCapSeconds() const { return m_total_cap_seconds; }
+
+    // Phase 9: lists for result screen
+    void getFoundHiders(std::vector<std::pair<irr::core::stringw, float>>& out) const;
+    void getRemainingHiders(std::vector<irr::core::stringw>& out) const;
 
 private:
     // Phase/time
@@ -116,6 +123,9 @@ private:
     // Phase 9: winner info
     bool m_seekers_win;
     bool m_race_over_set;
+
+    // Phase 9: found time per hider (-1 if not found), in seconds
+    std::vector<float> m_hider_found_time_sec;
 };
 
 #endif // HIDE_SEEK_WORLD_HPP

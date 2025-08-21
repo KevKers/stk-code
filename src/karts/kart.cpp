@@ -67,6 +67,7 @@
 #include "modes/linear_world.hpp"
 #include "modes/overworld.hpp"
 #include "modes/soccer_world.hpp"
+#include "modes/hide_seek_world.hpp"
 #include "network/compress_network_body.hpp"
 #include "network/network_config.hpp"
 #include "network/protocols/client_lobby.hpp"
@@ -1130,6 +1131,18 @@ void Kart::setRaceResult()
     {
         SoccerWorld* sw = dynamic_cast<SoccerWorld*>(World::getWorld());
         m_race_result = sw->getKartSoccerResult(this->getWorldKartId());
+    }
+    else if (RaceManager::get()->getMinorMode() == RaceManager::MINOR_MODE_HIDE_SEEK)
+    {
+        HideAndSeekWorld* hs = dynamic_cast<HideAndSeekWorld*>(World::getWorld());
+        if (hs)
+        {
+            KartTeam t = World::getWorld()->getKartTeam(getWorldKartId());
+            if (hs->didSeekersWin()) m_race_result = (t == KART_TEAM_BLUE);
+            else if (hs->didHidersWin()) m_race_result = (t == KART_TEAM_RED);
+            else m_race_result = false;
+        }
+        else m_race_result = false;
     }
     else if (RaceManager::get()->getMinorMode() == RaceManager::MINOR_MODE_EASTER_EGG)
     {

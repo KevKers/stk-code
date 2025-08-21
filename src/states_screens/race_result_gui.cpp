@@ -1,4 +1,10 @@
 //
+#include "states_screens/race_result_gui.hpp"
+#include "network/network_config.hpp"
+#include "network/stk_host.hpp"
+#include "states_screens/state_manager.hpp"
+#include "states_screens/main_menu_screen.hpp"
+
 //  SuperTuxKart - a fun racing game with go-kart
 //  Copyright (C) 2010-2015 Joerg Henrichs
 //
@@ -296,23 +302,142 @@ void RaceResultGUI::renderGlobal(float dt)
 void RaceResultGUI::displayHideSeekResults()
 {
 #ifndef SERVER_ONLY
-    core::stringw result_text;
-    static video::SColor color = video::SColor(255, 255, 255, 255);
-    gui::IGUIFont* font = GUIEngine::getTitleFont();
-
-    int current_x = UserConfigParams::m_width / 2;
-    RowInfo *ri = &(m_all_row_infos.empty() ? (m_all_row_infos.push_back(RowInfo()), m_all_row_infos[0]) : m_all_row_infos[0]);
-    int current_y = (int)ri->m_y_pos;
-
     HideAndSeekWorld* hs = dynamic_cast<HideAndSeekWorld*>(World::getWorld());
-    if (hs && hs->didSeekersWin())
-        result_text = _("Blue Team Wins"); // Seekers = Blue
-    else if (hs && hs->didHidersWin())
-        result_text = _("Red Team Wins"); // Hiders = Red
-    else
-        result_text = _("Game Over");
+    if (!hs) return;
 
-    core::rect<s32> pos(current_x, current_y, current_x, current_y);
-    font->draw(result_text.c_str(), pos, color, true, true);
+    // Header: which team wins
+    core::stringw result_text;
+    video::SColor header_color = video::SColor(255, 255, 255, 255);
+    if (hs->didSeekersWin())
+    {
+        result_text = _("Blue Team Wins"); // Seekers = Blue
+        header_color = video::SColor(255, 100, 150, 255);
+    }
+    else if (hs->didHidersWin())
+    {
+        result_text = _("Red Team Wins"); // Hiders = Red
+        header_color = video::SColor(255, 255, 120, 120);
+    }
+    else
+    {
+        result_text = _("Game Over");
+    }
+
+    gui::IGUIFont* title_font = GUIEngine::getTitleFont();
+    gui::IGUIFont* font = GUIEngine::getFont();
+    int center_x = UserConfigParams::m_width / 2;
+    int top_y = m_top; // near top
+    core::rect<s32> title_pos(center_x, top_y, center_x, top_y);
+    title_font->draw(result_text.c_str(), title_pos, header_color, true, true);
+
+    // Timer: show elapsed/total and remaining using mm:ss.xx (FFA style precision=2)
+    float elapsed_f = (float)hs->getElapsedSeconds();
+    float total_f = (float)hs->getTotalCapSeconds();
+    float remain_f = std::max(0.0f, total_f - elapsed_f);
+    core::stringw timer_text = StringUtils::toWString(
+        StringUtils::timeToString(elapsed_f, 2, true, false)) +
+        core::stringw(L" / ") +
+        StringUtils::toWString(StringUtils::timeToString(total_f, 2, true, false)) +
+
+void RaceResultGUI::eventCallback(GUIEngine::Widget* widget, const std::string& name, const int playerID)
+{
+#ifndef SERVER_ONLY
+    // Handle online HS footer buttons
+    if (NetworkConfig::get()->isClient())
+    {
+        if (name == "left")
+        {
+            // Quit server: disconnect and return to online menu (main menu is acceptable)
+            try
+            {
+                if (STKHost::existHost())
+                    STKHost::get()->disconnectAllPeers(true /*timeout_waiting*/);
+            }
+            catch(...)
+            {
+                // Ignore any exception, continue cleanup
+            }
+            RaceManager::get()->exitRace();
+            StateManager::get()->resetAndGoToScreen(MainMenuScreen::getInstance());
+            return;
+        }
+        else if (name == "right")
+        {
+            // Continue: default behavior (let existing logic handle)
+            ;
+        }
+    }
+#endif
+    Screen::eventCallback(widget, name, playerID);
+}
+
+        core::stringw(L"  (") +
+        StringUtils::toWString(StringUtils::timeToString(remain_f, 2, true, false)) +
+        core::stringw(L" ") + _("remaining") + core::stringw(L")");
+    int subtitle_y = top_y + title_font->getDimension(L"Ag").Height + 10;
+    core::rect<s32> subtitle_pos(center_x, subtitle_y, center_x, subtitle_y);
+    font->draw(timer_text.c_str(), subtitle_pos, video::SColor(255, 230, 230, 230), true, true);
+
+    // Columns similar to soccer
+    int col_left_x  = (int)(UserConfigParams::m_width * 0.18f);
+    int col_right_x = (int)(UserConfigParams::m_width * 0.82f);
+    int list_y = subtitle_y + font->getDimension(L"Ag").Height + 25;
+
+    std::vector<std::pair<irr::core::stringw, float>> found;
+    std::vector<irr::core::stringw> remaining;
+    hs->getFoundHiders(found);
+    hs->getRemainingHiders(remaining);
+
+    // Headers per your spec
+    core::stringw left_header = _("Found");
+    core::stringw right_header = _("Remaining");
+
+    gui::ScalableFont* header_font = GUIEngine::getTitleFont();
+    core::rect<s32> left_header_pos(col_left_x, list_y, col_left_x, list_y);
+    core::rect<s32> right_header_pos(col_right_x, list_y, col_right_x, list_y);
+    header_font->draw(left_header.c_str(), left_header_pos, video::SColor(255, 255, 255, 255), true, true);
+    header_font->draw(right_header.c_str(), right_header_pos, video::SColor(255, 255, 255, 255), true, true);
+
+    int line_h = font->getDimension(L"Aj").Height + 6;
+    int y_left = list_y + header_font->getDimension(L"Ag").Height + 10;
+    int y_right = y_left;
+
+    // Left column: Found list, with mm:ss.xx times
+    for (const auto& p : found)
+    {
+        core::stringw line = p.first + core::stringw(L"  ") +
+            StringUtils::toWString(StringUtils::timeToString(p.second, 2, true, false));
+        core::rect<s32> pos(col_left_x, y_left, col_left_x, y_left);
+        font->draw(line.c_str(), pos, video::SColor(255, 240, 240, 240), true, true);
+        y_left += line_h;
+    }
+
+    // Right column: Remaining names only
+    for (const auto& nm : remaining)
+    {
+        core::rect<s32> pos(col_right_x, y_right, col_right_x, y_right);
+        font->draw(nm.c_str(), pos, video::SColor(255, 240, 240, 240), true, true);
+        y_right += line_h;
+    }
+
+    // Online client footer buttons
+    if (NetworkConfig::get()->isClient())
+    {
+        if (GUIEngine::RibbonWidget* ops = getWidget<GUIEngine::RibbonWidget>("operations"))
+        {
+            if (auto left = getWidget<GUIEngine::IconButtonWidget>("left"))
+            {
+                left->setLabel(_("Quit server"));
+                left->setImage("gui/icons/main_quit.png");
+                left->setVisible(true);
+            }
+            if (auto right = getWidget<GUIEngine::IconButtonWidget>("right"))
+            {
+                right->setLabel(_("Continue"));
+                right->setImage("gui/icons/green_check.png");
+                right->setVisible(true);
+            }
+        }
+    }
 #endif
 }

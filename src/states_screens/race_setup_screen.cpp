@@ -276,6 +276,7 @@ void RaceSetupScreen::eventCallback(Widget* widget, const std::string& name,
         {
             // New Hide & Seek uses normal race tracks selection UI
             RaceManager::get()->setMinorMode(RaceManager::MINOR_MODE_HIDE_SEEK);
+            RaceManager::get()->setHasTeams(true);
             UserConfigParams::m_game_mode = CONFIG_CODE_HIDE_SEEK;
             TracksAndGPScreen::getInstance()->push();
         }

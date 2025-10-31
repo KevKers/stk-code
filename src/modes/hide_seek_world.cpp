@@ -1,5 +1,5 @@
 //  SuperTuxKart - a fun racing game with go-kart
-//  Hide and Seek mode (Phases 1-7)
+//  Hide and Seek mode (Fully Implemented)
 //  GPLv3-or-later
 
 #include "modes/hide_seek_world.hpp"
@@ -11,9 +11,14 @@
 #include "tracks/track.hpp"
 #include "utils/log.hpp"
 #include "utils/string_utils.hpp"
+#include "network/network_config.hpp"
+#include "network/network_string.hpp"
+#include "network/stk_host.hpp"
+#include "network/stk_peer.hpp"
 
 #include <algorithm>
 #include <sstream>
+#include <limits>
 
 HideAndSeekWorld::HideAndSeekWorld() : WorldWithRank()
 {
@@ -553,4 +558,165 @@ void HideAndSeekWorld::getRemainingHiders(std::vector<irr::core::stringw>& out) 
             out.push_back(getKart(i)->getController()->getName());
         }
     }
+}
+
+void HideAndSeekWorld::saveCompleteState(BareNetworkString* bns, STKPeer* peer)
+{
+    bns->addUInt8(m_phase);
+    bns->addUInt32(m_phase_start_ticks);
+    bns->addUInt32(m_game_start_ticks);
+    bns->addUInt32(m_hide_phase_seconds_current);
+    bns->addUInt32(m_total_cap_seconds);
+    bns->addUInt32(m_hint_max_uses_this_round);
+    bns->addUInt32(m_hint_unlock_seconds);
+    bns->addUInt8(m_seekers_win ? 1 : 0);
+    bns->addUInt8(m_race_over_set ? 1 : 0);
+
+    for (unsigned i = 0; i < getNumKarts(); ++i)
+    {
+        bns->addUInt8(m_is_hider[i] ? 1 : 0);
+        bns->addUInt8(m_is_seeker[i] ? 1 : 0);
+        bns->addUInt8(m_hider_confirmed[i] ? 1 : 0);
+        bns->addFloat(m_hider_found_time_sec[i]);
+    }
+
+    bns->addUInt32((uint32_t)m_pending_elim_ticks.size());
+    for (const auto& kv : m_pending_elim_ticks)
+    {
+        bns->addUInt32(kv.first);
+        bns->addUInt32(kv.second);
+    }
+
+    bns->addUInt32((uint32_t)m_hint_uses_left.size());
+    for (const auto& kv : m_hint_uses_left)
+    {
+        bns->addUInt32(kv.first);
+        bns->addUInt32(kv.second);
+    }
+
+    bns->addUInt32((uint32_t)m_hint_next_tick.size());
+    for (const auto& kv : m_hint_next_tick)
+    {
+        bns->addUInt32(kv.first);
+        bns->addUInt32(kv.second);
+    }
+
+    bns->addUInt32((uint32_t)m_fire_cooldown_next_tick.size());
+    for (const auto& kv : m_fire_cooldown_next_tick)
+    {
+        bns->addUInt32(kv.first);
+        bns->addUInt32(kv.second);
+    }
+}
+
+void HideAndSeekWorld::restoreCompleteState(const BareNetworkString& b)
+{
+    m_phase = (PhaseHS)b.getUInt8();
+    m_phase_start_ticks = b.getUInt32();
+    m_game_start_ticks = b.getUInt32();
+    m_hide_phase_seconds_current = b.getUInt32();
+    m_total_cap_seconds = b.getUInt32();
+    m_hint_max_uses_this_round = b.getUInt32();
+    m_hint_unlock_seconds = b.getUInt32();
+    m_seekers_win = b.getUInt8() != 0;
+    m_race_over_set = b.getUInt8() != 0;
+
+    for (unsigned i = 0; i < getNumKarts(); ++i)
+    {
+        m_is_hider[i] = b.getUInt8() != 0;
+        m_is_seeker[i] = b.getUInt8() != 0;
+        m_hider_confirmed[i] = b.getUInt8() != 0;
+        m_hider_found_time_sec[i] = b.getFloat();
+    }
+
+    m_pending_elim_ticks.clear();
+    uint32_t pending_count = b.getUInt32();
+    for (uint32_t i = 0; i < pending_count; ++i)
+    {
+        int kart_id = b.getUInt32();
+        int tick = b.getUInt32();
+        m_pending_elim_ticks[kart_id] = tick;
+    }
+
+    m_hint_uses_left.clear();
+    uint32_t hint_uses_count = b.getUInt32();
+    for (uint32_t i = 0; i < hint_uses_count; ++i)
+    {
+        int seeker_id = b.getUInt32();
+        int uses = b.getUInt32();
+        m_hint_uses_left[seeker_id] = uses;
+    }
+
+    m_hint_next_tick.clear();
+    uint32_t hint_next_count = b.getUInt32();
+    for (uint32_t i = 0; i < hint_next_count; ++i)
+    {
+        int seeker_id = b.getUInt32();
+        int tick = b.getUInt32();
+        m_hint_next_tick[seeker_id] = tick;
+    }
+
+    m_fire_cooldown_next_tick.clear();
+    uint32_t fire_cd_count = b.getUInt32();
+    for (uint32_t i = 0; i < fire_cd_count; ++i)
+    {
+        int seeker_id = b.getUInt32();
+        int tick = b.getUInt32();
+        m_fire_cooldown_next_tick[seeker_id] = tick;
+    }
+}
+
+std::pair<uint32_t, uint32_t> HideAndSeekWorld::getGameStartedProgress() const
+{
+    std::pair<uint32_t, uint32_t> progress(
+        std::numeric_limits<uint32_t>::max(),
+        std::numeric_limits<uint32_t>::max());
+
+    const int elapsed_ticks = getTimeTicks() - m_game_start_ticks;
+    const int elapsed_sec = stk_config->ticks2Time(elapsed_ticks);
+    progress.first = (uint32_t)elapsed_sec;
+
+    unsigned int total_hiders = 0;
+    unsigned int found_hiders = 0;
+    for (unsigned i = 0; i < getNumKarts(); ++i)
+    {
+        if (m_is_hider[i])
+        {
+            total_hiders++;
+            if (getKart(i)->isEliminated() || m_hider_found_time_sec[i] >= 0.0f)
+                found_hiders++;
+        }
+    }
+
+    if (total_hiders > 0)
+    {
+        progress.second = (uint32_t)((float)found_hiders / (float)total_hiders * 100.0f);
+    }
+
+    return progress;
+}
+
+void HideAndSeekWorld::addReservedKart(int kart_id)
+{
+    WorldWithRank::addReservedKart(kart_id);
+    if (kart_id >= 0 && kart_id < (int)m_hider_found_time_sec.size())
+    {
+        m_hider_found_time_sec[kart_id] = -1.0f;
+    }
+}
+
+void HideAndSeekWorld::terminateRace()
+{
+    const unsigned int kart_amount = getNumKarts();
+    for (unsigned int i = 0; i < kart_amount; ++i)
+    {
+        getKart(i)->finishedRace(0.0f, true);
+    }
+    WorldWithRank::terminateRace();
+}
+
+void HideAndSeekWorld::countdownReachedZero()
+{
+    m_time_ticks = 0;
+    m_time = 0.0f;
 }

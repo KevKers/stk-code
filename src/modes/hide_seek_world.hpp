@@ -1,5 +1,5 @@
 //  SuperTuxKart - a fun racing game with go-kart
-//  Hide and Seek mode (Phases 1-7 implemented)
+//  Hide and Seek mode (Fully Implemented)
 //  GPLv3-or-later
 
 #ifndef HIDE_SEEK_WORLD_HPP
@@ -19,6 +19,8 @@
 
 class NetworkString;
 class AbstractKart;
+class BareNetworkString;
+class STKPeer;
 
 class HideAndSeekWorld : public WorldWithRank
 {
@@ -40,6 +42,7 @@ public:
     virtual const std::string& getIdent() const OVERRIDE;
     virtual bool useFastMusicNearEnd() const OVERRIDE { return false; }
     virtual bool shouldDrawTimer() const OVERRIDE { return true; }
+    virtual bool hasTeam() const OVERRIDE { return true; }
     // Phase 7: allow boxes to exist, seekers will ignore pickups in ItemManager
     virtual bool haveBonusBoxes() OVERRIDE { return true; }
 
@@ -79,6 +82,14 @@ public:
     // Phase 9: lists for result screen
     void getFoundHiders(std::vector<std::pair<irr::core::stringw, float>>& out) const;
     void getRemainingHiders(std::vector<irr::core::stringw>& out) const;
+
+    // Networking support
+    virtual void saveCompleteState(BareNetworkString* bns, STKPeer* peer) OVERRIDE;
+    virtual void restoreCompleteState(const BareNetworkString& b) OVERRIDE;
+    virtual std::pair<uint32_t, uint32_t> getGameStartedProgress() const OVERRIDE;
+    virtual void addReservedKart(int kart_id) OVERRIDE;
+    virtual void terminateRace() OVERRIDE;
+    virtual void countdownReachedZero() OVERRIDE;
 
 private:
     // Phase/time

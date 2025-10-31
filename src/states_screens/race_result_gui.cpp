@@ -338,39 +338,6 @@ void RaceResultGUI::displayHideSeekResults()
         StringUtils::timeToString(elapsed_f, 2, true, false)) +
         core::stringw(L" / ") +
         StringUtils::toWString(StringUtils::timeToString(total_f, 2, true, false)) +
-
-void RaceResultGUI::eventCallback(GUIEngine::Widget* widget, const std::string& name, const int playerID)
-{
-#ifndef SERVER_ONLY
-    // Handle online HS footer buttons
-    if (NetworkConfig::get()->isClient())
-    {
-        if (name == "left")
-        {
-            // Quit server: disconnect and return to online menu (main menu is acceptable)
-            try
-            {
-                if (STKHost::existHost())
-                    STKHost::get()->disconnectAllPeers(true /*timeout_waiting*/);
-            }
-            catch(...)
-            {
-                // Ignore any exception, continue cleanup
-            }
-            RaceManager::get()->exitRace();
-            StateManager::get()->resetAndGoToScreen(MainMenuScreen::getInstance());
-            return;
-        }
-        else if (name == "right")
-        {
-            // Continue: default behavior (let existing logic handle)
-            ;
-        }
-    }
-#endif
-    Screen::eventCallback(widget, name, playerID);
-}
-
         core::stringw(L"  (") +
         StringUtils::toWString(StringUtils::timeToString(remain_f, 2, true, false)) +
         core::stringw(L" ") + _("remaining") + core::stringw(L")");
@@ -440,4 +407,36 @@ void RaceResultGUI::eventCallback(GUIEngine::Widget* widget, const std::string& 
         }
     }
 #endif
+}
+
+void RaceResultGUI::eventCallback(GUIEngine::Widget* widget, const std::string& name, const int playerID)
+{
+#ifndef SERVER_ONLY
+    // Handle online HS footer buttons
+    if (NetworkConfig::get()->isClient())
+    {
+        if (name == "left")
+        {
+            // Quit server: disconnect and return to online menu (main menu is acceptable)
+            try
+            {
+                if (STKHost::existHost())
+                    STKHost::get()->disconnectAllPeers(true /*timeout_waiting*/);
+            }
+            catch(...)
+            {
+                // Ignore any exception, continue cleanup
+            }
+            RaceManager::get()->exitRace();
+            StateManager::get()->resetAndGoToScreen(MainMenuScreen::getInstance());
+            return;
+        }
+        else if (name == "right")
+        {
+            // Continue: default behavior (let existing logic handle)
+            ;
+        }
+    }
+#endif
+    Screen::eventCallback(widget, name, playerID);
 }

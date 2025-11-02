@@ -218,7 +218,7 @@ bool HideAndSeekWorld::kartHit(int kart_id, int hitter)
     if (attacker->getLastUsedPowerup() != PowerupManager::POWERUP_CAKE)
         return false;
 
-    // Announce globally and schedule elimination in 5s
+    // Announce globally and schedule elimination in 10s
     const std::string victim_name = StringUtils::wideToUtf8(
         victim->getController()->getName());
     broadcastAll(StringUtils::insertValues("Player %s has been found", victim_name.c_str()));
@@ -230,7 +230,7 @@ bool HideAndSeekWorld::kartHit(int kart_id, int hitter)
         m_hider_found_time_sec[kart_id] = elapsed_sec;
     }
 
-    const int when = getTimeTicks() + stk_config->time2Ticks(5.0f);
+    const int when = getTimeTicks() + stk_config->time2Ticks(10.0f);
     m_pending_elim_ticks[kart_id] = when;
     return true;
 }
@@ -319,7 +319,7 @@ bool HideAndSeekWorld::manualFoundByName(const std::string& seeker_name,
         m_hider_found_time_sec[target_id] = elapsed_sec;
     }
 
-    const int when = getTimeTicks() + stk_config->time2Ticks(5.0f);
+    const int when = getTimeTicks() + stk_config->time2Ticks(10.0f);
     m_pending_elim_ticks[target_id] = when;
     return true;
 }

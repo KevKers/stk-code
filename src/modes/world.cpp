@@ -592,7 +592,25 @@ std::shared_ptr<AbstractKart> World::createKart
     }
 
     if (!controller->isLocalPlayerController() && !online_name.empty())
-        new_kart->setOnScreenText(online_name.c_str());
+    {
+        // Hide and Seek: Don't show nametags if local player is a seeker
+        bool show_nametag = true;
+        if (RaceManager::get()->getMinorMode() == RaceManager::MINOR_MODE_HIDE_SEEK)
+        {
+            // Check if any local player is a seeker (Blue team)
+            for (unsigned i = 0; i < getNumKarts(); ++i)
+            {
+                AbstractKart* local = getLocalPlayerKart(i);
+                if (local && getKartTeam(local->getWorldKartId()) == KART_TEAM_BLUE)
+                {
+                    show_nametag = false;
+                    break;
+                }
+            }
+        }
+        if (show_nametag)
+            new_kart->setOnScreenText(online_name.c_str());
+    }
     new_kart->setController(controller);
     RaceManager::get()->setKartColor(index, ri->getHue());
     return new_kart;
@@ -1751,7 +1769,25 @@ std::shared_ptr<AbstractKart> World::createKartWithTeam
         controller = new NetworkPlayerController(new_kart.get(),
                 npp.expired() ? nullptr : npp.lock().get());
         if (!online_name.empty())
-            new_kart->setOnScreenText(online_name.c_str());
+        {
+            // Hide and Seek: Don't show nametags if local player is a seeker
+            bool show_nametag = true;
+            if (RaceManager::get()->getMinorMode() == RaceManager::MINOR_MODE_HIDE_SEEK)
+            {
+                // Check if any local player is a seeker (Blue team)
+                for (unsigned i = 0; i < getNumKarts(); ++i)
+                {
+                    AbstractKart* local = getLocalPlayerKart(i);
+                    if (local && getKartTeam(local->getWorldKartId()) == KART_TEAM_BLUE)
+                    {
+                        show_nametag = false;
+                        break;
+                    }
+                }
+            }
+            if (show_nametag)
+                new_kart->setOnScreenText(online_name.c_str());
+        }
         m_num_players++;
         break;
     case RaceManager::KT_AI:

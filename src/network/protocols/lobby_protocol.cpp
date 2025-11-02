@@ -164,15 +164,15 @@ void LobbyProtocol::configRemoteKart(
         rki.setNetworkPlayerProfile(profile);
         // Inform the race manager about the data for this kart.
         RaceManager::get()->setPlayerKart(i, rki);
-	if (ServerConfig::m_soccer_log || ServerConfig::m_race_log)
-	{
+    if (ServerConfig::m_soccer_log || ServerConfig::m_race_log)
+    {
             GlobalLog::addIngamePlayer(i, StringUtils::wideToUtf8(profile->getName()), profile->isOfflineAccount());
-	    auto kart_team = profile->getTeam();
-	    std::string team = kart_team == KART_TEAM_RED ? "red" : "blue";
-	    std::string msg =  StringUtils::wideToUtf8(profile->getName()) + " joined the " + team + " team.\n";
-	    std::string empty_msg = " joined the " + team + " team.\n";
-	    if (!(msg == empty_msg)) GlobalLog::writeLog(msg, GlobalLogTypes::POS_LOG);
-	}
+        auto kart_team = profile->getTeam();
+        std::string team = kart_team == KART_TEAM_RED ? "red" : "blue";
+        std::string msg =  StringUtils::wideToUtf8(profile->getName()) + " joined the " + team + " team.\n";
+        std::string empty_msg = " joined the " + team + " team.\n";
+        if (!(msg == empty_msg)) GlobalLog::writeLog(msg, GlobalLogTypes::POS_LOG);
+    }
     }   // for i in players
     // Clean all previous AI if exists in offline game
     RaceManager::get()->computeRandomKartList();
@@ -258,7 +258,26 @@ void LobbyProtocol::addLiveJoiningKart(int kart_id, const RemoteKartInfo& rki,
     k->setLiveJoinKart(live_join_util_ticks);
     World::getWorld()->initTeamArrows(k);
     if (!k->getController()->isLocalPlayerController())
-        k->setOnScreenText(rki.getPlayerName().c_str());
+    {
+        // Hide and Seek: Don't show nametags if local player is a seeker
+        bool show_nametag = true;
+        if (RaceManager::get()->getMinorMode() == RaceManager::MINOR_MODE_HIDE_SEEK)
+        {
+            World* w = World::getWorld();
+            // Check if any local player is a seeker (Blue team)
+            for (unsigned i = 0; i < w->getNumKarts(); ++i)
+            {
+                AbstractKart* local = w->getLocalPlayerKart(i);
+                if (local && w->getKartTeam(local->getWorldKartId()) == KART_TEAM_BLUE)
+                {
+                    show_nametag = false;
+                    break;
+                }
+            }
+        }
+        if (show_nametag)
+            k->setOnScreenText(rki.getPlayerName().c_str());
+    }
     if (k->getController()->isNetworkPlayerController())
         k->getController()->updateNetworkPlayerProfile(
                 rki.getNetworkPlayerProfile().lock().get());

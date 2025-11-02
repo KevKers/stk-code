@@ -230,7 +230,8 @@ bool HideAndSeekWorld::kartHit(int kart_id, int hitter)
         m_hider_found_time_sec[kart_id] = elapsed_sec;
     }
 
-    const int when = getTimeTicks() + stk_config->time2Ticks(5.0f);
+    float delay = (float)ServerConfig::m_hs_elimination_delay;
+    const int when = getTimeTicks() + stk_config->time2Ticks(delay);
     m_pending_elim_ticks[kart_id] = when;
     return true;
 }
@@ -283,44 +284,6 @@ bool HideAndSeekWorld::confirmHiderKart(int kart_id)
     const std::string name = StringUtils::wideToUtf8(
         getKart(kart_id)->getController()->getName());
     broadcastAll(StringUtils::insertValues("Player %s is ready!", name.c_str()));
-    return true;
-}
-
-bool HideAndSeekWorld::manualFoundByName(const std::string& seeker_name,
-                                         const std::string& target_name,
-                                         float max_distance_m)
-{
-    // Find seeker and target by display name
-    int seeker_id = -1;
-    int target_id = -1;
-    for (unsigned i = 0; i < getNumKarts(); ++i)
-    {
-        const std::string nm = StringUtils::wideToUtf8(
-            getKart(i)->getController()->getName());
-        if (seeker_id < 0 && nm == seeker_name) seeker_id = (int)i;
-        if (target_id < 0 && nm == target_name) target_id = (int)i;
-    }
-    if (seeker_id < 0 || target_id < 0) return false;
-    if (!m_is_seeker[seeker_id] || !m_is_hider[target_id]) return false;
-    if (m_phase != PHASE_SEEK) return false;
-    if (getKart(target_id)->isEliminated()) return false;
-
-    const float dist = (getKart(seeker_id)->getXYZ() - getKart(target_id)->getXYZ()).length();
-    if (dist > max_distance_m) return false;
-
-    const std::string victim_name = StringUtils::wideToUtf8(
-        getKart(target_id)->getController()->getName());
-    broadcastAll(StringUtils::insertValues("Player %s has been found", victim_name.c_str()));
-
-    // Record found time once
-    if (m_hider_found_time_sec[target_id] < 0.0f)
-    {
-        float elapsed_sec = stk_config->ticks2Time(getTimeTicks() - m_game_start_ticks);
-        m_hider_found_time_sec[target_id] = elapsed_sec;
-    }
-
-    const int when = getTimeTicks() + stk_config->time2Ticks(5.0f);
-    m_pending_elim_ticks[target_id] = when;
     return true;
 }
 

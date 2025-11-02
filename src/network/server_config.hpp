@@ -56,6 +56,8 @@ namespace ServerConfig
         SERVER_CFG_DEFAULT(IntServerConfigParam(5, "hs-hint-default-uses", "HS: default per-seeker /hint uses per round."));
     SERVER_CFG_PREFIX IntServerConfigParam m_hs_hint_unlock_seconds
         SERVER_CFG_DEFAULT(IntServerConfigParam(420, "hs-hint-unlock-seconds", "HS: number of seconds from round start after which /hint becomes available (default 7min)."));
+    SERVER_CFG_PREFIX FloatServerConfigParam m_hs_elimination_delay
+        SERVER_CFG_DEFAULT(FloatServerConfigParam(5.0f, "hs-elimination-delay", "HS: seconds before found hider is moved to lobby."));
 
     SERVER_CFG_PREFIX StringServerConfigParam m_hs_live_join_deny_message
         SERVER_CFG_DEFAULT(StringServerConfigParam("No remaining place in server to join.", "hs-live-join-deny-message", "Custom message shown when live join is denied in HS."));

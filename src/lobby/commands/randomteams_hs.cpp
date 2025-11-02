@@ -39,9 +39,8 @@ bool RandomTeamsHSCommand::execute(nnwcli::CommandExecutorContext* const ctx, vo
         return false;
     }
 
-    // Make votable to all; allow admin to force via veto logic
-    CMD_VOTABLE(data, true);
-    CMD_SELFVOTE_PERMLOWER_CROWN(stk_ctx, data, m_min_veto, parser);
+    // No permission check - anyone can randomize teams
+    CMD_VOTABLE(data, false);
 
     // Collect all non-spectator players
     std::vector<std::shared_ptr<NetworkPlayerProfile>> players;

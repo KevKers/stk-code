@@ -43,6 +43,14 @@ bool ConfirmCommand::execute(nnwcli::CommandExecutorContext* const ctx, void* co
         return false;
     }
 
+    // Check if player is a hider (Red team)
+    if (w->getKartTeam(my_kart) != KART_TEAM_RED)
+    {
+        ctx->write("Only hiders can use this command.");
+        ctx->flush();
+        return false;
+    }
+
     if (!hs->confirmHiderKart(my_kart))
     {
         ctx->write("You cannot confirm right now.");

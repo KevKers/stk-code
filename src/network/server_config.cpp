@@ -241,6 +241,9 @@ std::pair<RaceManager::MinorRaceModeType, RaceManager::MajorRaceModeType>
         case 8:
             return { RaceManager::MINOR_MODE_CAPTURE_THE_FLAG,
                 RaceManager::MAJOR_MODE_SINGLE };
+        case 9:
+            return { RaceManager::MINOR_MODE_HIDE_SEEK,
+                RaceManager::MAJOR_MODE_SINGLE };
         default:
             break;
     }
@@ -307,6 +310,11 @@ bool getLocalGameModeFromName(const std::string& name,
         *out = 6;
         return true;
     }
+    if (name == "hide-and-seek" || name == "hide-seek" || name == "hidenseek" || name == "hs")
+    {
+        *out = 9;
+        return true;
+    }
 
     return false;
 }
@@ -332,6 +340,8 @@ core::stringw getModeName(unsigned id)
             return _("Free-For-All");
         case 8:
             return _("Capture The Flag");
+        case 9:
+            return _("Hide and Seek");
         default:
             return L"";
     }

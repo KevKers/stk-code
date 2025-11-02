@@ -30,6 +30,7 @@
 #include "karts/controller/controller.hpp"
 #include "karts/kart_properties.hpp"
 #include "modes/world.hpp"
+#include "modes/hide_seek_world.hpp"
 #include "network/network_config.hpp"
 #include "network/network_string.hpp"
 #include "network/rewind_manager.hpp"
@@ -283,6 +284,7 @@ void Powerup::use()
     }
 
     m_number--;
+    World *world = World::getWorld();
     // HS Phase 7: Restrict seekers from firing unless near a hider; refund on miss handled in world
     if (world)
     {
@@ -306,8 +308,6 @@ void Powerup::use()
             }
         }
     }
-
-    World *world = World::getWorld();
     ItemManager* im = Track::getCurrentTrack()->getItemManager();
     switch (m_type)
     {

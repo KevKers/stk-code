@@ -153,8 +153,8 @@ namespace ServerConfig
         SERVER_CFG_DEFAULT(IntServerConfigParam(3, "server-mode",
         "Game mode in server, 0 is normal race (grand prix), "
         "1 is time trial (grand prix), 3 is normal race, "
-        "4 time trial, 6 is soccer, 7 is free-for-all and "
-        "8 is capture the flag. Notice: grand prix server doesn't "
+        "4 time trial, 6 is soccer, 7 is free-for-all, 8 is capture the flag, "
+        "and 9 is hide and seek. Notice: grand prix server doesn't "
         "allow for players to join and wait for ongoing game."));
 
     SERVER_CFG_PREFIX IntServerConfigParam m_server_difficulty

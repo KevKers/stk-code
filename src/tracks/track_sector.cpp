@@ -44,6 +44,7 @@ void TrackSector::reset()
     m_estimated_valid_graph_node = Graph::UNKNOWN_SECTOR;
     m_on_road                    = false;
     m_last_triggered_checkline   = -1;
+    m_missed_checkline           = false;
 }   // reset
 
 // ----------------------------------------------------------------------------
@@ -90,6 +91,7 @@ void TrackSector::update(const Vec3 &xyz, bool ignore_vertical)
     // used for distances.
     const DriveNode* dn = DriveGraph::get()->getNode(m_current_graph_node);
     const std::vector<int>& checkline_requirements = dn->getChecklineRequirements();
+    m_missed_checkline = false;
 
     if (checkline_requirements.size() == 0)
     {
@@ -99,6 +101,7 @@ void TrackSector::update(const Vec3 &xyz, bool ignore_vertical)
     }
     else
     {
+        bool requirements_met = false;
         for (unsigned int i=0; i<checkline_requirements.size(); i++)
         {
             // If a checkline is validated while off-road and rescue is then
@@ -109,6 +112,7 @@ void TrackSector::update(const Vec3 &xyz, bool ignore_vertical)
             if (m_last_triggered_checkline >= checkline_requirements[i])
             {
                 //has_prerequisite = true;
+                requirements_met = true;
                 m_estimated_valid_graph_node = m_current_graph_node;
                 if (m_on_road)
                     m_last_valid_graph_node = m_current_graph_node;
@@ -116,8 +120,8 @@ void TrackSector::update(const Vec3 &xyz, bool ignore_vertical)
             }
         }
 
-        // TODO: show a message when we detect a user missed a checkline.
-
+        if (!requirements_met)
+            m_missed_checkline = true;
     }
 
     // Now determine the 'track' coords, i.e. ow far from the start of the

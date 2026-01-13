@@ -45,17 +45,44 @@ bool ResultsCommand::execute(nnwcli::CommandExecutorContext* const ctx, void* co
         bool has_elo_changes = false;
         std::istringstream iss(result);
         std::string line;
+        std::string duration_line = "";
+
         while (std::getline(iss, line))
         {
-            if (line.find("The game lasted") == std::string::npos && !line.empty())
+            if (line.empty()) continue;
+
+            // Handle duration line
+            if (line.find("The game lasted") != std::string::npos)
             {
+                duration_line = line;
+                continue;
+            }
+
+            // Check for actual ELO changes (ignore +0, -0, 0)
+            // Format is "PlayerName Change" (space separated)
+            size_t last_space = line.find_last_of(' ');
+            if (last_space != std::string::npos)
+            {
+                std::string change_str = line.substr(last_space + 1);
+                if (change_str != "0" && change_str != "+0" && change_str != "-0")
+                {
+                    has_elo_changes = true;
+                }
+            }
+            else
+            {
+                // Fallback: If format is unexpected, assume it's a change
                 has_elo_changes = true;
-                break;
             }
         }
         
         if (!has_elo_changes)
-            ctx->write("No ELO changes\n\n" + result);
+        {
+            std::string msg = "No ELO changes";
+            if (!duration_line.empty())
+                msg += "\n\n" + duration_line;
+            ctx->write(msg);
+        }
         else
             ctx->write(result);
     }

@@ -39,6 +39,23 @@
 
 #include <memory>
 #include <string.h>
+#include <cctype>
+
+// Minimal safety check for names used by the external team balancer.
+static bool is_name_valid_for_autoteams(const std::string& raw_name)
+{
+    auto l = raw_name.begin();
+    auto r = raw_name.end();
+    while (l != r && std::isspace((unsigned char)*l)) ++l;
+    while (r != l && std::isspace((unsigned char)*(r - 1))) --r;
+    if (l == r)
+        return false;
+
+    if (*l == '-')
+        return false;
+
+    return true;
+}
 
 /** Constructor for an empty peer.
  */
@@ -210,6 +227,8 @@ PeerEligibility STKPeer::testEligibility()
 {
     std::shared_ptr<ServerLobby> const lobby =
         LobbyProtocol::get<ServerLobby>();
+    std::string primary_name = StringUtils::wideToUtf8(
+        getPlayerProfiles()[0]->getName());
     // if a spectator then not eligible
     if (getAlwaysSpectate() == ASM_COMMAND)
     {
@@ -219,19 +238,42 @@ PeerEligibility STKPeer::testEligibility()
     if (!isValidated() || (getAlwaysSpectate() == ASM_FULL))
     {
         m_last_eligibility.store(PELG_OTHER);
+        Log::verbose("STKPeer", "Peer %d (%s) is ineligible: not validated or full spectator: PELG_OTHER",
+                getHostId(), primary_name.c_str());
         return PELG_OTHER;
+    }
+
+    // Reject names that are incompatible with the external team
+    // balancer.
+    if (hasPlayerProfiles())
+    {
+        if (!is_name_valid_for_autoteams(primary_name))
+        {
+            Log::warn("ServerLobby",
+                "Marking player '%s' as ineligible due to incompatible "
+                "name for autoteams.",
+                primary_name.c_str());
+            m_last_eligibility.store(PELG_ACCESS_DENIED);
+            return PELG_ACCESS_DENIED;
+        }
     }
 
     // if a permission level is not enough or restricted
     if (getPermissionLevel() < PERM_PLAYER || hasRestriction(PRF_NOGAME))
     {
         m_last_eligibility.store(PELG_ACCESS_DENIED);
+        Log::verbose("STKPeer", "Peer %d (%s) is ineligible: either permission is too low or restriction PRF_NOGAME is in place: PELG_ACCESS_DENIED. "
+                "rank: %d, restrictions %d",
+                getHostId(), primary_name.c_str(),
+                getPermissionLevel(), getRestrictions());
         return PELG_ACCESS_DENIED;
     }
 
     if (!lobby)
     {
         m_last_eligibility.store(PELG_OTHER);
+        Log::error("STKPeer", "ServerLobby is not available during eligibility test for peer %d (%s)",
+                getHostId(), primary_name.c_str());
         return PELG_OTHER; // Lobby is not available for settrack test
     }
 
@@ -242,6 +284,8 @@ PeerEligibility STKPeer::testEligibility()
         if (tracks.find(forced_track) == tracks.cend())
         {
             m_last_eligibility.store(PELG_NO_FORCED_TRACK);
+            Log::verbose("STKPeer", "Peer %d (%s) is ineligible: currently forced track is not part of its assets. PELG_NO_FORCED_TRACK.",
+                    getHostId(), primary_name.c_str());
             return PELG_NO_FORCED_TRACK;
         }
     }
@@ -249,17 +293,23 @@ PeerEligibility STKPeer::testEligibility()
     if (!lobby->checkAllStandardContentInstalled(this))
     {
         m_last_eligibility.store(PELG_NO_STANDARD_CONTENT);
+        Log::verbose("STKPeer", "Peer %d (%s) is ineligible: missing standard content. PELG_NO_STANDARD_CONTENT",
+                getHostId(), primary_name.c_str());
         return PELG_NO_STANDARD_CONTENT;
     }
 
     if (ServerConfig::m_command_kart_mode && hasPlayerProfiles() && getPlayerProfiles()[0]->getForcedKart().empty())
     {
         m_last_eligibility.store(PELG_PRESET_KART_REQUIRED);
+        Log::verbose("STKPeer", "Peer %d (%s) is ineligible: PELG_PRESET_KART_REQUIRED on a command kart mode.",
+                getHostId(), primary_name.c_str());
         return PELG_PRESET_KART_REQUIRED;
     }
     if (ServerConfig::m_command_track_mode && forced_track.empty())
     {
         m_last_eligibility.store(PELG_PRESET_TRACK_REQUIRED);
+        Log::verbose("STKPeer", "Peer %d (%s) is ineligible: PELG_PRESET_TRACK_REQUIRED on a command track mode.",
+                getHostId(), primary_name.c_str());
         return PELG_PRESET_TRACK_REQUIRED;
     }
     if (ServerConfig::m_soccer_roulette && hasPlayerProfiles())
@@ -273,6 +323,8 @@ PeerEligibility STKPeer::testEligibility()
 		    {
 			    // player not found in .xml
 			    m_last_eligibility.store(PELG_OTHER);
+                Log::verbose("STKPeer", "Peer %d (%s) is ineligible: Is not a part of the soccer roulette event.",
+                        getHostId(), primary_name.c_str());
 			    return PELG_OTHER;
 		    }
 	    }

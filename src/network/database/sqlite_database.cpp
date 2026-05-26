@@ -229,6 +229,27 @@ bool SQLiteDatabase::easySQLQuery(
     return true;
 }   // easySQLQuery
 
+void SQLiteDatabase::logCommandUsage(const std::string& command_name,
+                                     const std::string& source)
+{
+    if (!m_db || !ServerConfig::m_sql_management)
+        return;
+
+    if (command_name.empty() || source.empty())
+        return;
+
+    std::shared_ptr<BinderCollection> coll = std::make_shared<BinderCollection>();
+    std::string query = StringUtils::insertValues(
+        "INSERT INTO command_usage_log "
+        "(server_uid, command_name, source, created_at) "
+        "VALUES (%s, %s, %s, datetime('now'));",
+        Binder(coll, ServerConfig::m_server_uid, "server_uid"),
+        Binder(coll, command_name, "command_name"),
+        Binder(coll, source, "source")
+    );
+    easySQLQuery(query, nullptr, coll->getBindFunction());
+}
+
 //-----------------------------------------------------------------------------
 /** Performs a query to determine if a certain table exists.
  *  \param table The searched name.
@@ -647,6 +668,56 @@ bool SQLiteDatabase::writeReport(
     }
     return easySQLQuery(query, nullptr, coll->getBindFunction());
 }   // writeReport
+
+//-----------------------------------------------------------------------------
+/** Writes a free form feature suggestion coming from the /feature command.
+ *  \param player_name Name of the player sending the suggestion.
+ *  \param message The suggestion text.
+ *  \return True if the database query succeeded.
+ */
+bool SQLiteDatabase::writeFeatureMessage(const std::string& player_name,
+                                         const std::string& message)
+{
+    if (!ServerConfig::m_sql_management || !m_db)
+        return false;
+
+    std::shared_ptr<BinderCollection> coll = std::make_shared<BinderCollection>();
+    std::string query = StringUtils::insertValues(
+        "INSERT INTO %s "
+        "(server_uid, created_at, player_name, message) "
+        "VALUES (%s, datetime('now'), %s, %s);",
+        ServerConfig::m_feature_messages_table.c_str(),
+        Binder(coll, ServerConfig::m_server_uid, "server_uid"),
+        Binder(coll, player_name, "player_name"),
+        Binder(coll, message, "message")
+    );
+    return easySQLQuery(query, nullptr, coll->getBindFunction());
+}   // writeFeatureMessage
+
+//-----------------------------------------------------------------------------
+/** Writes a free form textual report coming from the /report command.
+ *  \param player_name Name of the player sending the report.
+ *  \param message The report text.
+ *  \return True if the database query succeeded.
+ */
+bool SQLiteDatabase::writeTextReport(const std::string& player_name,
+                                     const std::string& message)
+{
+    if (!ServerConfig::m_sql_management || !m_db)
+        return false;
+
+    std::shared_ptr<BinderCollection> coll = std::make_shared<BinderCollection>();
+    std::string query = StringUtils::insertValues(
+        "INSERT INTO %s "
+        "(server_uid, created_at, player_name, message) "
+        "VALUES (%s, datetime('now'), %s, %s);",
+        ServerConfig::m_text_reports_table.c_str(),
+        Binder(coll, ServerConfig::m_server_uid, "server_uid"),
+        Binder(coll, player_name, "player_name"),
+        Binder(coll, message, "message")
+    );
+    return easySQLQuery(query, nullptr, coll->getBindFunction());
+}   // writeTextReport
 
 //-----------------------------------------------------------------------------
 /** Gets the rows from IPv4 ban table, either all of them (for polling

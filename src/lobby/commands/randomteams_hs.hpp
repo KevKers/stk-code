@@ -8,10 +8,8 @@
 
 class RandomTeamsHSCommand : public STKCommand
 {
-    // Let everyone vote; admin can force
-    ServerPermissionLevel m_min_veto = PERM_ADMINISTRATOR;
 public:
-    RandomTeamsHSCommand() : STKCommand(true/*votable*/)
+    RandomTeamsHSCommand() : STKCommand(false/*not votable - anyone can use*/)
     {
         m_name = "randomteams";
         m_description = "Assigns Hiders/Seekers for Hide and Seek (1 seeker for <=5 players, 2 for 6-10).";

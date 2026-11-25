@@ -1183,13 +1183,13 @@ void Kart::collectedItem(ItemState *item_state)
         m_attachment->hitBanana(item_state);
         break;
     case Item::ITEM_NITRO_SMALL:
-	if (RaceManager::get()->getNitrolessMode())
-		break;
+    if (RaceManager::get()->getNitrolessMode())
+        break;
         m_collected_energy += m_kart_properties->getNitroSmallContainer() + ibost/2;
         break;
     case Item::ITEM_NITRO_BIG:
-	if (RaceManager::get()->getNitrolessMode())
-		break;
+    if (RaceManager::get()->getNitrolessMode())
+        break;
         m_collected_energy += m_kart_properties->getNitroBigContainer() + ibost;
         break;
     case Item::ITEM_BONUS_BOX  :
@@ -2363,6 +2363,25 @@ void Kart::crashed(AbstractKart *k, bool update_attachments)
     }
     m_controller->crashed(k);
     playCrashSFX(NULL, k);
+
+    // Hide & Seek: detect seeker bumping into hider
+    if (k && RaceManager::get()->getMinorMode() == RaceManager::MINOR_MODE_HIDE_SEEK)
+    {
+        HideAndSeekWorld* hs = dynamic_cast<HideAndSeekWorld*>(World::getWorld());
+        if (hs)
+        {
+            int my_id = getWorldKartId();
+            int other_id = k->getWorldKartId();
+            World* w = World::getWorld();
+            
+            // Check if this is a seeker (blue) hitting a hider (red)
+            if (w->getKartTeam(my_id) == KART_TEAM_BLUE && 
+                w->getKartTeam(other_id) == KART_TEAM_RED)
+            {
+                hs->kartHit(other_id, my_id);
+            }
+        }
+    }
 }   // crashed(Kart, update_attachments
 
 // -----------------------------------------------------------------------------

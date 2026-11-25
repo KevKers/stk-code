@@ -28,6 +28,7 @@
 #include "karts/abstract_kart.hpp"
 #include "karts/controller/spare_tire_ai.hpp"
 #include "modes/easter_egg_hunt.hpp"
+#include "modes/hide_seek_world.hpp"
 #include "modes/profile_world.hpp"
 #include "network/network_config.hpp"
 #include "network/race_event_manager.hpp"

@@ -54,9 +54,6 @@ public:
 
     // Command helpers
     bool confirmHiderKart(int kart_id);
-    bool manualFoundByName(const std::string& seeker_name_utf8,
-                           const std::string& target_name_utf8,
-                           float max_distance_m);
 
     // Hint handling for /hint
     // Returns true when a hint was produced, false with out_message explaining why

@@ -94,7 +94,6 @@
 #include "lobby/commands/endgame.hpp"
 #include "lobby/commands/randomteams_hs.hpp"
 #include "lobby/commands/confirm.hpp"
-#include "lobby/commands/found.hpp"
 #include "lobby/commands/hint.hpp"
 #include "lobby/commands/poweruphint.hpp"
 #include "lobby/commands/allowstart.hpp"
@@ -108,6 +107,7 @@
 #include "lobby/commands/setowner.hpp"
 #include "lobby/commands/sethidetime.hpp"
 #include "lobby/commands/settotaltimecap.hpp"
+#include "lobby/commands/setelimdelay.hpp"
 #include "lobby/commands/setteam.hpp"
 #include "lobby/commands/settrack.hpp"
 #include "lobby/commands/start.hpp"
@@ -255,8 +255,8 @@ void ServerLobbyCommands::registerCommands()
     {
         m_executor.register_command(std::make_shared<StkSeenCommand>());
         m_executor.add_alias("seen", "stk-seen");
-	m_executor.register_command(std::make_shared<StkSeenOptOutCommand>());
-	m_executor.add_alias("toggle-antitrack", "stk-seen-optout");
+    m_executor.register_command(std::make_shared<StkSeenOptOutCommand>());
+    m_executor.add_alias("toggle-antitrack", "stk-seen-optout");
     }
     m_executor.register_command(std::make_shared<DatetimeCommand>());
     m_executor.add_alias("date", "datetime");
@@ -285,9 +285,9 @@ void ServerLobbyCommands::registerCommands()
     // Hide & Seek
     m_executor.register_command(std::make_shared<RandomTeamsHSCommand>());
     m_executor.register_command(std::make_shared<ConfirmCommand>());
-    m_executor.register_command(std::make_shared<FoundCommand>());
     m_executor.register_command(std::make_shared<HintCommand>());
     m_executor.register_command(std::make_shared<PowerUpHintCommand>());
+    m_executor.register_command(std::make_shared<SetElimDelayCommand>());
     m_executor.register_command(std::make_shared<AllowStartCommand>());
     m_executor.add_alias("allowstart", "allowstart");
     m_executor.add_alias("poweruphint", "poweruphint");

@@ -159,6 +159,10 @@ public:
          STKPeer* reporter, std::shared_ptr<NetworkPlayerProfile> reporter_npp,
        STKPeer* reporting, std::shared_ptr<NetworkPlayerProfile> reporting_npp,
                                                      irr::core::stringw& info) OVERRIDE;
+    virtual bool writeFeatureMessage(const std::string& player_name,
+                                     const std::string& message) OVERRIDE;
+    virtual bool writeTextReport(const std::string& player_name,
+                                 const std::string& message) OVERRIDE;
     virtual bool hasDatabase() const OVERRIDE { return m_db != nullptr; }
     virtual std::vector<IpBanTableData> getIpBanTableData(uint32_t ip = 0) const OVERRIDE;
     virtual std::vector<Ipv6BanTableData> getIpv6BanTableData(std::string ipv6 = "") const OVERRIDE;
@@ -192,6 +196,9 @@ public:
     virtual const std::string formatBanList(unsigned int page, unsigned int psize) OVERRIDE;
     virtual const std::string formatBanInfo(const std::string& name) OVERRIDE;
     /* /Moderation toolkit */
+
+    void logCommandUsage(const std::string& command_name,
+                         const std::string& source);
 
     static void upperIPv6SQL(sqlite3_context* context, int argc, sqlite3_value** argv);
     static void insideIPv6CIDRSQL(sqlite3_context* context, int argc, sqlite3_value** argv);

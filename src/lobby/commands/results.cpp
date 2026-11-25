@@ -38,11 +38,15 @@ bool ResultsCommand::execute(nnwcli::CommandExecutorContext* const ctx, void* co
     std::string result = lobby->get_elo_change_string();
 
     if (result.empty())
+    {
         ctx->write("No ELO changes");
+    }
     else
     {
         // Check if result contains only duration line (no ELO changes)
         bool has_elo_changes = false;
+        bool parse_error = false;
+
         std::istringstream iss(result);
         std::string line;
         std::string duration_line = "";
@@ -74,6 +78,30 @@ bool ResultsCommand::execute(nnwcli::CommandExecutorContext* const ctx, void* co
                 // Fallback: If format is unexpected, assume it's a change
                 has_elo_changes = true;
             }
+
+            if (delta != 0)
+            {
+                has_elo_changes = true;
+                formatted << player << " -> "
+                          << (delta > 0 ? "+" : "") << delta
+                          << "\n";
+            }
+        }
+
+        // if something wrong -> clean fallback
+        if (parse_error)
+        {
+            std::string msg = "No ELO changes";
+            if (!duration_line.empty())
+                msg += "\n" + duration_line;
+            ctx->write(msg);
+        }
+        else if (!has_elo_changes)
+        {
+            std::string msg = "No ELO changes";
+            if (!duration_line.empty())
+                msg += "\n" + duration_line;
+            ctx->write(msg);
         }
         
         if (!has_elo_changes)
@@ -84,10 +112,11 @@ bool ResultsCommand::execute(nnwcli::CommandExecutorContext* const ctx, void* co
             ctx->write(msg);
         }
         else
-            ctx->write(result);
+        {
+            ctx->write(formatted.str());
+        }
     }
 
     ctx->flush();
-
     return true;
 }

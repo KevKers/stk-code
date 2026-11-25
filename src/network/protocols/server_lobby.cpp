@@ -256,7 +256,6 @@ ServerLobby::ServerLobby() : LobbyProtocol()
 
 #ifdef ENABLE_SQLITE3
     m_db = new SQLiteDatabase();
-    m_db->init();
 #endif
 
     LobbyPlayerQueue::create();
@@ -847,6 +846,15 @@ void ServerLobby::kickHost(Event* event)
 {
     if (m_server_owner.lock() != event->getPeerSP())
         return;
+
+    if (!ServerConfig::m_allow_gui_kick)
+    {
+        sendStringToPeer(
+            std::string("Kicking via GUI is disabled on this server. "
+                        "Use /kick <player> <reason> instead."),
+            event->getPeer());
+        return;
+    }
     if (!checkDataSize(event, 4)) return;
     NetworkString& data = event->data();
     uint32_t host_id = data.getUInt32();
@@ -2681,7 +2689,8 @@ void ServerLobby::setKartRestrictionMode(const enum KartRestrictionMode mode)
  */
 void ServerLobby::startSelection(const Event *event)
 {		
-	if (event)
+	bool has_eligible_peers = false;
+    if (event)
 	{
         // ready button pressed
 		std::shared_ptr<STKPeer> peer = event->getPeerSP();
@@ -2696,12 +2705,13 @@ void ServerLobby::startSelection(const Event *event)
 		// check if player can play
         const PeerEligibility old_eligibility = peer->getEligibility();
         const PeerEligibility new_eligibility = peer->testEligibility();
+        has_eligible_peers |= peer->isEligibleForGame();
         LobbyPlayerQueue::get()->onPeerEligibilityChange(peer, old_eligibility);
 
         if (new_eligibility != old_eligibility)
             updatePlayerList();
 
-        // Do checks only if this player is not server owner
+        // Do checks only if this player is not server owner and it is not the only eligible player.
         if (m_server_owner.lock() != peer)
         {
             switch (new_eligibility)
@@ -2799,20 +2809,6 @@ void ServerLobby::startSelection(const Event *event)
     unsigned max_player = 0;
     STKHost::get()->updatePlayers(&max_player);
     
-    if (ServerConfig::m_soccer_log || ServerConfig::m_race_log)
-    {
-        GlobalLog::writeLog("GAME_START\n", GlobalLogTypes::POS_LOG);
-        
-        time_t now;
-        time(&now);
-        char buf[sizeof "2011-10-08T07:07:09Z"];
-        strftime(buf, sizeof buf, "%FT%TZ", gmtime(&now));
-        std::string buf2;
-        for (int i=0;i< sizeof buf - 1 ;i++)
-            buf2 += buf[i];
-        std::string msg = "Match started at " + buf2 + "\n";
-        GlobalLog::writeLog(msg, GlobalLogTypes::POS_LOG);
-    }
 
     if (always_spectate_peers.size() == peers.size())
     {
@@ -2838,17 +2834,31 @@ void ServerLobby::startSelection(const Event *event)
             break;
     }
 
+    //bool eligibility_player_list = false;
     for (auto peer : peers)
     {
         // update eligibility of all peers except the one who pressed the button
-        if ((!event || peer != event->getPeerSP()) && !peer->isEligibleForGame())
+        if ((!event || peer != event->getPeerSP()))
         {
-            peer->setWaitingForGame(true);
-            if (peer->getPermissionLevel() >= PERM_SPECTATOR &&
-                    peer->notRestrictedBy(PRF_NOSPEC) && peer->getAlwaysSpectate() != ASM_COMMAND)
-                peer->setAlwaysSpectate(ASM_FULL);
-            always_spectate_peers.insert(peer.get());
-            continue;
+            // Enable this part of code to actually recheck eligibilities when start button is pressed.
+#ifdef SERVERLOBBY_SELECTION_UPDATEELIG
+            const PeerEligibility old_eligibility = peer->getEligibility();
+            const PeerEligibility new_eligibility = peer->testEligibility();
+            LobbyPlayerQueue::get()->onPeerEligibilityChange(peer, old_eligibility);
+            if (new_eligibility != old_eligibility)
+                eligibility_player_list = true;
+#endif
+
+            if (!peer->isEligibleForGame())
+            {
+                peer->setWaitingForGame(true);
+                if (peer->getPermissionLevel() >= PERM_SPECTATOR &&
+                        peer->notRestrictedBy(PRF_NOSPEC) && peer->getAlwaysSpectate() != ASM_COMMAND)
+                    peer->setAlwaysSpectate(ASM_FULL);
+                always_spectate_peers.insert(peer.get());
+                continue;
+            } else 
+                has_eligible_peers = true;
         }
         // Spectators won't remove maps as they are already waiting for game
         if (!peer->isValidated() || peer->isWaitingForGame())
@@ -2860,6 +2870,13 @@ void ServerLobby::startSelection(const Event *event)
             peer->eraseServerTracks(m_available_kts.second, tracks_erase);
         }
     }
+#if SERVERLOBBY_SELECTION_UPDATEELIG
+    if (eligibility_player_list)
+        updatePlayerList();
+#endif
+    if (!has_eligible_peers)
+        // abort starting the game at all.
+        return;
 
     for (const std::string& kart_erase : karts_erase)
     {
@@ -2907,6 +2924,21 @@ void ServerLobby::startSelection(const Event *event)
             else
                 it++;
         }
+    }
+
+    if (ServerConfig::m_soccer_log || ServerConfig::m_race_log)
+    {
+        GlobalLog::writeLog("GAME_START\n", GlobalLogTypes::POS_LOG);
+        
+        time_t now;
+        time(&now);
+        char buf[sizeof "2011-10-08T07:07:09Z"];
+        strftime(buf, sizeof buf, "%FT%TZ", gmtime(&now));
+        std::string buf2;
+        for (size_t i = 0; i < sizeof(buf) - 1; i++)
+            buf2 += buf[i];
+        std::string msg = "Match started at " + buf2 + "\n";
+        GlobalLog::writeLog(msg, GlobalLogTypes::POS_LOG);
     }
 
     // These tracks will never be selected when track voting is disabled
@@ -3080,6 +3112,7 @@ void ServerLobby::startSelection(const Event *event)
         peer->sendPacket(ns, true/*reliable*/);
         delete ns;
     }
+    Log::verbose("ServerLobby", "Started selection");
     m_state = SELECTING;    
     if (!always_spectate_peers.empty())
     {
@@ -3692,12 +3725,15 @@ bool ServerLobby::handleAssets(const NetworkString& ns,
         updateAddons();
         updateTracksForMode();
     }
-    const PeerEligibility old_el = peer->getEligibility();
-    const PeerEligibility new_el = peer->testEligibility();
-    // eligibility hooks
-    LobbyPlayerQueue::get()->onPeerEligibilityChange(peer, old_el);
-    if (new_el != old_el)
-        updatePlayerList();
+    if (peer->isValidated())
+    {
+        const PeerEligibility old_el = peer->getEligibility();
+        const PeerEligibility new_el = peer->testEligibility();
+        // eligibility hooks
+        LobbyPlayerQueue::get()->onPeerEligibilityChange(peer, old_el);
+        if (new_el != old_el)
+            updatePlayerList();
+    }
     return true;
 }   // handleAssets
 
@@ -3928,20 +3964,24 @@ void ServerLobby::handleUnencryptedConnection(std::shared_ptr<STKPeer> peer,
     uint32_t restrictions;
     std::string set_kart;
     auto red_blue = STKHost::get()->getAllPlayersTeamInfo();
-    if (ServerConfig::m_server_owner > 0 && 
-            online_id == ServerConfig::m_server_owner)
-    {
+    if (ServerConfig::m_server_owner > 0 &&
+            online_id == static_cast<uint32_t>(ServerConfig::m_server_owner))
         permlvl = std::numeric_limits<int>::max();
-    }
     else
-    {
         permlvl = loadPermissionLevelForOID(online_id);
-    }
     peer->setPermissionLevel(permlvl);
     auto restrictions_set_kart = loadRestrictionsForOID(online_id);
     restrictions = std::get<0>(restrictions_set_kart);
     set_kart = std::get<1>(restrictions_set_kart);
     peer->setRestrictions(restrictions);
+
+    std::string utf8_online_name = StringUtils::wideToUtf8(online_name);
+    Log::verbose("ServerLobby", "Peer %d, online id %d (%s): rank %u, restrictions %u",
+            peer->getHostId(),
+            online_id,
+            utf8_online_name.c_str(),
+            peer->getPermissionLevel(),
+            peer->getRestrictions());
 
     for (unsigned i = 0; i < player_count; i++)
     {
@@ -3963,8 +4003,6 @@ void ServerLobby::handleUnencryptedConnection(std::shared_ptr<STKPeer> peer,
             peer->getHostId(), default_kart_color, i == 0 ? online_id : 0,
             handicap, (uint8_t)i, KART_TEAM_NONE,
             country_code);
-
-        std::string utf8_online_name = StringUtils::wideToUtf8(online_name);
 
         if (!set_kart.empty())
             player->forceKart(set_kart);
@@ -4189,7 +4227,6 @@ void ServerLobby::updatePlayerList(bool update_when_reset_server)
     else
         m_current_ai_count.store(0);
 
-    const int prev_lobby_players = m_lobby_players.load();
     m_lobby_players.store((int)all_profiles.size());
 
     if (m_state.load() == WAITING_FOR_START_GAME)
@@ -6656,7 +6693,7 @@ std::tuple<uint32_t, std::string> ServerLobby::loadRestrictionsForOID(const uint
 #ifdef ENABLE_SQLITE3
     return m_db->loadRestrictionsForOID(online_id);
 #else
-    return 0;
+    return std::tuple<uint32_t, std::string>(0u, std::string());
 #endif
 }
 std::tuple<uint32_t, std::string> ServerLobby::loadRestrictionsForUsername(const core::stringw& name)
@@ -6664,7 +6701,7 @@ std::tuple<uint32_t, std::string> ServerLobby::loadRestrictionsForUsername(const
 #ifdef ENABLE_SQLITE3
     return m_db->loadRestrictionsForUsername(name);
 #else
-    return 0;
+    return std::tuple<uint32_t, std::string>(0u, std::string());
 #endif
 }
 void ServerLobby::writeRestrictionsForOID(const uint32_t online_id, const uint32_t flags)
@@ -7209,14 +7246,29 @@ bool ServerLobby::checkAllStandardContentInstalled(STKPeer* peer) const
     }
     if (!missing_tracks.empty())
     {
-        std::string msg = "You are missing standard tracks";   
-        msg += "\n\nMissing tracks:\n";
+        std::ostringstream log;
+        bool log_1 = false;
+        std::ostringstream msg_ss;
+        msg_ss << "You are missing standard tracks\n\nMissing tracks:\n";
         for (const auto& track : missing_tracks)
         {
-            msg += "- " + track + "\n";
-            msg += "  Install with: /installaddon " + track + "\n";
+            msg_ss << "- " << track << "\n";
+
+            log << track;
+            if (log_1)
+                log << ", ";
+            else
+                log_1 = true;
         }
+        msg_ss << "Note: It usually happens when your game is outdated. "
+            "Your current version is: " << peer->getUserVersion() << "\nUpdate your game to the newest release, and then rejoin.";
+        std::string msg = msg_ss.str();
         sendStringToPeer(msg, peer);
+        {
+            std::string playername = peer->getCommandContext()->getProfileName();
+            std::string log_2 = log.str();
+            Log::verbose("ServerLobby", "Peer %d (%s) is ineligible: missing tracks (%s)", peer->getHostId(), playername.c_str(), log_2.c_str());
+        }
         return false;
     }   
     return true;
@@ -7272,19 +7324,29 @@ void ServerLobby::checkRPSTimeouts()
     uint64_t current_time = StkTime::getMonoTimeMs();
     for (auto it = m_rps_challenges.begin(); it != m_rps_challenges.end(); )
     {
+        std::shared_ptr<STKPeer> challenger_peer = NULL;
+        std::shared_ptr<STKPeer> challenged_peer = NULL;
+        for (auto& p : STKHost::get()->getPeers())
+        {
+            if (p->getHostId() == it->challenger_id)
+                challenger_peer = p;
+            else if (p->getHostId() == it->challenged_id)
+                challenged_peer = p;
+            if (challenger_peer && challenged_peer)
+                break;
+        }
+        const bool challenger_in_game = challenger_peer &&
+            !challenger_peer->isWaitingForGame();
+        const bool challenged_in_game = challenged_peer &&
+            !challenged_peer->isWaitingForGame();
+        if (challenger_in_game || challenged_in_game)
+        {
+            it = m_rps_challenges.erase(it);
+            continue;
+        }
+
         if (current_time > it->timeout)
         {
-            std::shared_ptr<STKPeer> challenger_peer = NULL;
-            std::shared_ptr<STKPeer> challenged_peer = NULL;
-            for (auto& p : STKHost::get()->getPeers())
-            {
-                if (p->getHostId() == it->challenger_id)
-                    challenger_peer = p;
-                else if (p->getHostId() == it->challenged_id)
-                    challenged_peer = p;   
-                if (challenger_peer && challenged_peer)
-                    break;
-            }
             // Challenges are now auto-accepted, so check if choices were made
             if (it->challenger_choice == RPS_NONE && it->challenged_choice == RPS_NONE)
             {

@@ -1,3 +1,4 @@
+
 //
 //  SuperTuxKart - a fun racing game with go-kart
 //  Copyright (C) 2013-2015 SuperTuxKart-Team
@@ -20,6 +21,7 @@
 
 // COMMANDS
 #include "argument_types.hpp"
+#include "globals.hpp"
 #include "lobby/commands/ban.hpp"
 #include "lobby/commands/broadcast.hpp"
 #include "lobby/commands/chaosparty.hpp"
@@ -93,6 +95,7 @@
 #include "lobby/commands/autokick.hpp"
 #include "lobby/commands/endgame.hpp"
 #include "lobby/commands/goalhistory.hpp"
+#include "lobby/commands/git_version.hpp"
 // special features
 #include "lobby/commands/pole.hpp"
 // moderation
@@ -112,6 +115,14 @@
 #include "network/server_config.hpp"
 #include "network/stk_peer.hpp"
 #include "network/stk_host.hpp"
+#include "parser/abstract_parser.hpp"
+#include <exception>
+#include <iostream>
+#include <stdexcept>
+#ifdef ENABLE_SQLITE3
+#include "network/database/abstract_database.hpp"
+#include "network/database/sqlite_database.hpp"
+#endif
 #include "utils/log.hpp"
 #include "utils/string_utils.hpp"
 
@@ -119,6 +130,23 @@
 #include <sstream>
 
 static const char* LOGNAME = "ServerLobbyCommands";
+
+static std::string extract_command_name(const std::string& line)
+{
+    if (line.empty())
+        return std::string();
+
+    std::string s = line;
+    if (!s.empty() && s[0] == '/')
+        s.erase(0, 1);
+
+    std::string::size_type pos = s.find(' ');
+    if (pos != std::string::npos)
+        s = s.substr(0, pos);
+
+    std::transform(s.begin(), s.end(), s.begin(), ::tolower);
+    return s;
+}
 
 ServerLobbyCommands* ServerLobbyCommands::g_instance = nullptr;
 
@@ -344,6 +372,7 @@ void ServerLobbyCommands::registerCommands()
     m_executor.register_command(std::make_shared<JumblewordCommand>());
     m_executor.add_alias("jw", "jumbleword");
     m_executor.register_command(std::make_shared<AuthenticateCommand>());
+    m_executor.register_command(std::make_shared<GitVersionCommand>());
 }
 
 void ServerLobbyCommands::handleServerCommand(ServerLobby* const lobby, std::shared_ptr<STKPeer>& peer, std::string& line)
@@ -369,8 +398,36 @@ void ServerLobbyCommands::handleServerCommand(ServerLobby* const lobby, std::sha
         lobby->submitPoleVote(peer, argv0_number);
         return;
     }
+
+#ifdef ENABLE_SQLITE3
+    {
+        const std::string cmd_name = extract_command_name(line);
+        if (!cmd_name.empty())
+        {
+            auto sl = LobbyProtocol::get<ServerLobby>();
+            if (sl)
+            {
+                AbstractDatabase* adb = sl->getDatabase();
+                if (adb)
+                {
+                    SQLiteDatabase* sdb = dynamic_cast<SQLiteDatabase*>(adb);
+                    if (sdb)
+                        sdb->logCommandUsage(cmd_name, "chat");
+                }
+            }
+        }
+    }
+#endif
     try {
         m_executor.dispatch_line(line, context, &dispatch_data);
+        // For some reason, NNWCLI's cli_error does not qualify as `std::exception`
+    } catch (const nnwcli::cli_error& e) {
+        Log::error(LOGNAME, "Could not execute the command \"%s\" by %s: %s",
+                line.c_str(), context->getProfileName().c_str(), e.what());
+
+        context->write("An unknown error has occurred when trying to execute the command. Inform server staff.");
+        context->flush();
+        return;
     } catch (const std::exception& e) {
         Log::error(LOGNAME, "Could not execute the command \"%s\" by %s: %s",
                 line.c_str(), context->getProfileName().c_str(), e.what());
@@ -386,7 +443,7 @@ void ServerLobbyCommands::handleServerCommand(ServerLobby* const lobby, std::sha
         // the command itself can't always provide the SHARED pointer of the m_voted_command
         // due to the limitations of the nnwcli library
         auto stk_command = std::dynamic_pointer_cast<STKCommand>(
-            dispatch_data.m_voted_command ? 
+            dispatch_data.m_voted_command ?
             dispatch_data.m_voted_command :
             // in case the command votes for itself, it can't provide shared pointer,
             // find it again
@@ -394,6 +451,8 @@ void ServerLobbyCommands::handleServerCommand(ServerLobby* const lobby, std::sha
 
         // it has already been verified that the voted alias exists.
         assert(stk_command);
+        // special command /vote will redefine the parser, especially because some commands can reset the argument parsing procedure mid test vote.
+        context->set_parser(dispatch_data.m_voted_args);
 
         // if it wasn't a self-vote, test it
         if (!ServerConfig::m_command_voting)
@@ -417,7 +476,8 @@ void ServerLobbyCommands::handleServerCommand(ServerLobby* const lobby, std::sha
         else if (!dispatch_data.m_can_vote)
         {
             // previous test returned false, deny the permission
-            context->sendNoPermission();
+            context->write("This command cannot be voted.");
+            context->flush();
             return;
         }
         // command can be voted in, do it
@@ -428,21 +488,43 @@ void ServerLobbyCommands::handleServerCommand(ServerLobby* const lobby, std::sha
         };
         // generalize the argument line, e.g. turn yes/y/on/1 to "on"
         // for bool arg and so on
+        dispatch_data.m_voted_args->reset_pos();
+        dispatch_data.m_voted_args->reset_argument_pos();
         entry.bakeArgline();
         submitVote(lobby, context->getProfileName(), context.get(), entry);
     }
 }
 void ServerLobbyCommands::handleNetworkConsoleCommand(std::string& line)
 {
-    auto sl = LobbyProtocol::get<ServerLobby>();
     DispatchData dispatch_data;
+    auto sl = LobbyProtocol::get<ServerLobby>();
     NetworkConsole::network_console_context->set_lobby(sl.get());
     NetworkConsole::network_console_context->set_lobby_commands(this);
+
+#ifdef ENABLE_SQLITE3
+    {
+        const std::string cmd_name = extract_command_name(line);
+        if (!cmd_name.empty() && sl)
+        {
+            AbstractDatabase* adb = sl->getDatabase();
+            if (adb)
+            {
+                SQLiteDatabase* sdb = dynamic_cast<SQLiteDatabase*>(adb);
+                if (sdb)
+                    sdb->logCommandUsage(cmd_name, "console");
+            }
+        }
+    }
+#endif
 
     try
     {
         m_executor.dispatch_line(
             line, NetworkConsole::network_console_context, &dispatch_data);
+    }
+    catch (const nnwcli::cli_error& e)
+    {
+        Log::error(LOGNAME, "Command parsing error: %s", e.what());
     }
     catch (const std::exception& e)
     {
@@ -460,11 +542,22 @@ bool ServerLobbyCommands::testVote(
     assert(data->m_voted_command);
     try {
         data->m_voted_command->execute(ctx, data);
-    } catch (const std::exception& e) {
-        ctx->write("Unable to vote because the command cannot be executed. Check the usage and try to vote again.\nUsage: /");
+    } catch (const nnwcli::cli_error& e) {
+        ctx->write("Unable to vote because the command cannot be executed. Check the usage and try to vote again.\nUsage: ");
         std::stringstream ss;
         data->m_voted_command->format_usage_into(ss, data->m_voted_alias);
         *ctx << ss;
+        ctx->flush();
+        return false;
+    } catch (const std::invalid_argument& e) {
+        ctx->write("Unable to vote because of wrongly specified argument. Check the usage and try to vote again.\nUsage: ");
+        std::stringstream ss;
+        data->m_voted_command->format_usage_into(ss, data->m_voted_alias);
+        *ctx << ss;
+        ctx->flush();
+        return false;
+    } catch (const std::exception& e) {
+        ctx->write("Unable to vote because of an unknown error. Report this issue with /report");
         ctx->flush();
         return false;
     }
@@ -586,7 +679,6 @@ void ServerLobbyCommands::VoteEntry::bakeArgline()
                 char arg;
                 if (!m_voted_args->parse_tinyint(arg, !opt))
 		    break;
-                if (nfirst)
                 if (nfirst)
                     res << whitespace;
                 res << arg;
@@ -771,7 +863,7 @@ void ServerLobbyCommands::applyVoteIfPresent(ServerLobby* lobby)
             vote++;
             continue;
         }
-        
+
         // send the command to the vote and erase the entry
         dispatchVotedCommand(lobby, vote->first.m_voted_command, vote->first.m_voted_args,
                 vote->first.m_voted_argline);
@@ -796,10 +888,15 @@ void ServerLobbyCommands::dispatchVotedCommand(ServerLobby* const lobby, std::sh
     try {
         DispatchData dispatch_data;
         cmd->execute(ctx.get(), &dispatch_data);
-    } catch (std::exception& e) {
-        Log::error(LOGNAME, "Could not execute voted-in command \"%s\" as network console with arguments \"%s\". %s",
+    } catch (const nnwcli::cli_error& e) {
+        Log::error(LOGNAME, "Could not execute voted-in command \"%s\" as network console with arguments \"%s\". NNWCLI error: %s",
                 cmd->get_name().c_str(), argline.c_str(), e.what());
         std::string msg = "Could not execute the voted-in command for some reason. Contact the server administrator.";
+        lobby->sendStringToAllPeers(msg);
+    } catch (const std::exception& e) {
+        Log::error(LOGNAME, "Could not execute voted-in command \"%s\" as network console with arguments \"%s\". %s",
+                cmd->get_name().c_str(), argline.c_str(), e.what());
+        std::string msg = "Could not execute the voted-in command because it couldn't be parsed.";
         lobby->sendStringToAllPeers(msg);
     }
 }

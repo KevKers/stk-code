@@ -316,14 +316,6 @@ namespace ServerConfig
         "motd", "Message of today shown in lobby, you can enter encoded XML "
         "words here or a file.txt and let STK load it."));
 
-    SERVER_CFG_PREFIX StringServerConfigParam m_feature_filepath
-        SERVER_CFG_DEFAULT(StringServerConfigParam("features.txt",
-        "feature-filepath", "File to log the /inform (message) messages into from players."));
-
-    SERVER_CFG_PREFIX StringServerConfigParam m_reports_filepath
-        SERVER_CFG_DEFAULT(StringServerConfigParam("report.txt",
-        "reports-filepath", "File to log the /report (message) messages into from players."));
-
     SERVER_CFG_PREFIX BoolServerConfigParam m_chat
         SERVER_CFG_DEFAULT(BoolServerConfigParam(true, "chat",
         "If this value is set to false, the server will ignore chat messages "
@@ -352,7 +344,7 @@ namespace ServerConfig
 
 	SERVER_CFG_PREFIX StringServerConfigParam m_allowed_missing_tracks
 	    SERVER_CFG_DEFAULT(StringServerConfigParam(
-	    "hole_drop oasis",
+	    "hole_drop oasis xr_soccer",
 	    "allowed-missing-tracks",
 	    "Space-separated list of standard track identifiers that clients are allowed to miss without being blocked from joining."));
 
@@ -495,6 +487,12 @@ namespace ServerConfig
         "grand prix server, and will be automatically turned on if the server "
         "was created using the in-game GUI. The changed difficulty and game "
         "mode will not be saved in this config file."));
+
+    SERVER_CFG_PREFIX BoolServerConfigParam m_allow_gui_kick
+        SERVER_CFG_DEFAULT(BoolServerConfigParam(false, "allow-gui-kick",
+        "If true, the server owner can kick players using the GUI player "
+        "dialog. If false (default), kicking must be done via the /kick "
+        "command in chat."));
 
     SERVER_CFG_PREFIX BoolServerConfigParam m_real_addon_karts
         SERVER_CFG_DEFAULT(BoolServerConfigParam(true, "real-addon-karts",
@@ -660,6 +658,18 @@ namespace ServerConfig
         SERVER_CFG_DEFAULT(FloatServerConfigParam(3.0f,
         "player-reports-expired-days", "Days to keep player reports, "
         "older than that will be auto cleared, 0 to keep them forever."));
+
+    SERVER_CFG_PREFIX StringServerConfigParam m_feature_messages_table
+        SERVER_CFG_DEFAULT(StringServerConfigParam("feature_messages",
+        "feature-messages-table",
+        "Table used for storing free form suggestions from /feature. "
+        "You need to create the table first in the configured sqlite database."));
+
+    SERVER_CFG_PREFIX StringServerConfigParam m_text_reports_table
+        SERVER_CFG_DEFAULT(StringServerConfigParam("text_reports",
+        "text-reports-table",
+        "Table used for storing freeform reports from /report. "
+        "You need to create the table first in the configured sqlite database."));
 
     SERVER_CFG_PREFIX StringServerConfigParam m_ip_geolocation_table
         SERVER_CFG_DEFAULT(StringServerConfigParam("ip_mapping",

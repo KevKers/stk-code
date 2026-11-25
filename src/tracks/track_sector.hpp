@@ -61,12 +61,16 @@ private:
 
     int m_last_triggered_checkline;
 
+    bool m_missed_checkline;
+
 public:
           TrackSector();
     void  reset();
     void  rescue();
     void  update(const Vec3 &xyz, bool ignore_vertical = false);
     float getRelativeDistanceToCenter() const;
+
+    bool hasMissedCheckline() const { return m_missed_checkline; }
     // ------------------------------------------------------------------------
     /** Returns how far the the object is from the start line. */
     float getDistanceFromStart(bool account_for_checklines, bool strict=false) const

@@ -324,6 +324,7 @@ void LinearWorld::updateGraphics(float dt)
                 !m_karts[i]->isEliminated())
             {
                 checkForWrongDirection(i, dt);
+                checkForMissedCheckline(i, dt);
             }
         }   // for i <kart_amount
     }
@@ -1107,6 +1108,45 @@ void LinearWorld::checkForWrongDirection(unsigned int i, float dt)
 }   // checkForWrongDirection
 
 //-----------------------------------------------------------------------------
+/** Checks if a kart missed a checkline. This is done only for
+ *  player karts to display a message to the player.
+ *  \param i Kart id.
+ *  \param dt Time step size.
+ */
+void LinearWorld::checkForMissedCheckline(unsigned int i, float dt)
+{
+    if (!m_karts[i]->getController()->isLocalPlayerController())
+        return;
+
+    KartInfo &ki = m_kart_info[i];
+    const AbstractKart *kart = m_karts[i].get();
+
+    if (getTrackSector(i)->hasMissedCheckline())
+    {
+        ki.m_missed_checkline_timer += dt;
+        if (ki.m_missed_checkline_timer > 2.0f)
+            ki.m_missed_checkline_timer = 2.0f;
+    }
+    else
+    {
+        ki.m_missed_checkline_timer -= dt;
+        if (ki.m_missed_checkline_timer < 0)
+            ki.m_missed_checkline_timer = 0;
+    }
+
+    if (ki.m_missed_checkline_timer > 1.0f && m_race_gui)
+    {
+        m_race_gui->addMessage(_("Missed Checkline!"), kart,
+                               -1.0f, // Duration -1 means handled per frame
+                               video::SColor(255, 255, 128, 0), // Orange
+                               true, // Important
+                               true, // Big font
+                               true // Outline
+                               );
+    }
+}   // checkForMissedCheckline
+
+//-----------------------------------------------------------------------------
 void LinearWorld::setLastTriggeredCheckline(unsigned int kart_index, int index)
 {
     if (m_kart_info.size() == 0) return;
@@ -1146,6 +1186,7 @@ void LinearWorld::KartInfo::saveCompleteState(BareNetworkString* bns)
     bns->addFloat(m_estimated_finish);
     bns->addFloat(m_overall_distance);
     bns->addFloat(m_wrong_way_timer);
+    bns->addFloat(m_missed_checkline_timer);
 }   // saveCompleteState
 
 // ----------------------------------------------------------------------------
@@ -1157,6 +1198,7 @@ void LinearWorld::KartInfo::restoreCompleteState(const BareNetworkString& b)
     m_estimated_finish = b.getFloat();
     m_overall_distance = b.getFloat();
     m_wrong_way_timer = b.getFloat();
+    m_missed_checkline_timer = b.getFloat();
 }   // restoreCompleteState
 
 // ----------------------------------------------------------------------------

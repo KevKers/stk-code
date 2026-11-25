@@ -104,6 +104,10 @@ private:
          *  direction so that a message can be displayed. */
         float       m_wrong_way_timer;
 
+        /** Accumulates the time a kart has been missing a checkline
+         *  so that a message can be displayed. */
+        float       m_missed_checkline_timer;
+
         /** Initialises all fields. */
         KartInfo()  { reset(); }
         // --------------------------------------------------------------------
@@ -116,6 +120,7 @@ private:
             m_estimated_finish  = -1.0f;
             m_overall_distance  = 0.0f;
             m_wrong_way_timer   = 0.0f;
+            m_missed_checkline_timer = 0.0f;
         }   // reset
         // --------------------------------------------------------------------
         void saveCompleteState(BareNetworkString* bns);
@@ -133,6 +138,7 @@ protected:
     std::vector<KartInfo> m_kart_info;
 
     virtual void  checkForWrongDirection(unsigned int i, float dt);
+    virtual void  checkForMissedCheckline(unsigned int i, float dt);
     virtual float estimateFinishTimeForKart(AbstractKart* kart) OVERRIDE;
 
 public:
